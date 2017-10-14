@@ -439,7 +439,7 @@ def recurrent(layer, layer_in, layerId):
                             bias_regularizer=bias_regularizer, activity_regularizer=activity_regularizer,
                             kernel_constraint=kernel_constraint, recurrent_constraint=recurrent_constraint,
                             bias_constraint=bias_constraint, use_bias=use_bias, dropout=dropout,
-                            recurrent_dropout=recurrent_dropout,return_sequences=return_sequences)(*layer_in)
+                            recurrent_dropout=recurrent_dropout, return_sequences=return_sequences)(*layer_in)
     else:
         out[layerId] = SimpleRNN(units, kernel_initializer=kernel_initializer,
                                  bias_initializer=bias_initializer,
