@@ -414,7 +414,10 @@ def recurrent(layer, layer_in, layerId):
     use_bias = layer['params']['use_bias']
     dropout = layer['params']['dropout']
     recurrent_dropout = layer['params']['recurrent_dropout']
-    return_sequences = True
+    if ('return_sequences' in layer['params']):
+        return_sequences = layer['params']['return_sequences']
+    else:
+        return_sequences = False
     if (layer['info']['type'] == 'GRU'):
         recurrent_activation = layer['params']['recurrent_activation']
         out[layerId] = GRU(units, kernel_initializer=kernel_initializer,
