@@ -300,6 +300,8 @@ class Content extends React.Component {
     // so that the new imported layers will all be mounted again
     const tempError = {};
     const error = [];
+    // maintaining height & width in integers for use of map in order to
+    // reduce the search space for overlapping layers & plotting.
     const height = Math.round(0.05*window.innerHeight, 0);
     const width = Math.round(0.35*window.innerWidth, 0);
     // Initialize Python layer parameters to be empty
@@ -378,6 +380,7 @@ class Content extends React.Component {
       // the preferred positions.
       while (layerOverlaps) {   
         var overlapFlag = false;    
+        // checking for overlapping layer div's by use of there height & width.
         for(var topC = Math.max(0,top - 40);topC<(top+80);topC++) {
           if(map.hasOwnProperty(topC)){
             var xPositions = map[topC].slice();
