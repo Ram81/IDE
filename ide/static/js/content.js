@@ -214,9 +214,6 @@ class Content extends React.Component {
       Object.keys(netData).forEach(layerId => {
         delete netData[layerId].state;
       });
-      console.log(netObj);
-      console.log(netData);
-      console.log(this.state.net);
 
       const url = {'caffe': '/caffe/export', 'keras': '/keras/export', 'tensorflow': '/tensorflow/export'}
       this.setState({ load: true });
