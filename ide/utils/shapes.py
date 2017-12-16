@@ -4,7 +4,7 @@ import numpy as np
 def data(layer):
     Input = []
     if (layer['info']['type'] in ['ImageData', 'Data', 'WindowData']):
-        if (('crop_size' in layer['params']) and (layer['params']['crop_size'][0] != 0)):
+        if (('crop_size' in layer['params']) and (layer['params']['crop_size'] != 0)):
             Output = [3] + [layer['params']['crop_size']]*2
         elif (('new_height' in layer['params']) and ('new_width' in layer['params'])):
             Output = [3, layer['params']['new_height'], layer['params']['new_width']]
