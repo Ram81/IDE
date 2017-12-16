@@ -191,11 +191,32 @@ class Content extends React.Component {
   exportNet(framework) {
     this.dismissAllErrors();
     const error = [];
- 
+    const netObj = JSON.parse(JSON.stringify(this.state.net));
+
+    Object.keys(netObj).forEach(layerId => {
+      const layer = netObj[layerId];
+      Object.keys(layer.params).forEach(param => {
+        layer.params[param] = layer.params[param][0];
+        const paramData = data[layer.info.type].params[param];
+        if (layer.info.type == 'Python' && param == 'endPoint'){
+          return;
+        }
+        if (paramData.required === true && layer.params[param] === '') {
+          error.push(`Error: "${paramData.name}" required in "${layer.props.name}" Layer`);
+        }
+      });
+    });
+
     if (error.length) {
       this.setState({ error });
     } else {
-      const netData = JSON.parse(JSON.stringify(this.state.net));
+      const netData = netObj;
+      Object.keys(netData).forEach(layerId => {
+        delete netData[layerId].state;
+      });
+      console.log(netObj);
+      console.log(netData);
+      console.log(this.state.net);
 
       const url = {'caffe': '/caffe/export', 'keras': '/keras/export', 'tensorflow': '/tensorflow/export'}
       this.setState({ load: true });

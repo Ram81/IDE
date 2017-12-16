@@ -28,11 +28,6 @@ def export_json(request):
     if request.method == 'POST':
         net = yaml.safe_load(request.POST.get('net'))
         net_name = request.POST.get('net_name')
-        # Preprocessing net object to remove state attribute & separate params
-        for layerId in net:
-            for param in net[layerId]['params']:
-                net[layerId]['params'][param] = net[layerId]['params'][param][0]
-            del net[layerId]['state']
         if net_name == '':
             net_name = 'Net'
         try:
