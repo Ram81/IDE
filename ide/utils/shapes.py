@@ -4,14 +4,14 @@ import numpy as np
 def data(layer):
     Input = []
     if (layer['info']['type'] in ['ImageData', 'Data', 'WindowData']):
-        if (('crop_size' in layer['params']) and (layer['params']['crop_size'] != 0)):
-            Output = [3] + [layer['params']['crop_size']]*2
+        if (('crop_size' in layer['params']) and (layer['params']['crop_size'][0] != 0)):
+            Output = [3] + [layer['params']['crop_size'][0]]*2
         elif (('new_height' in layer['params']) and ('new_width' in layer['params'])):
-            Output = [3, layer['params']['new_height'], layer['params']['new_width']]
+            Output = [3, layer['params']['new_height'][0], layer['params']['new_width'][0]]
     elif (layer['info']['type'] in ['Input', 'DummyData']):
-        Output = map(int, layer['params']['dim'].split(','))[1:]
+        Output = map(int, layer['params']['dim'][0].split(','))[1:]
     elif (layer['info']['type'] == 'MemoryData'):
-        Output = [3, layer['params']['height'], layer['params']['width']]
+        Output = [3, layer['params']['height'][0], layer['params']['width'][0]]
     else:
         raise Exception('Cannot determine shape of ' + layer['info']['type'] + ' layer.')
     return Input, Output
@@ -25,39 +25,39 @@ def filter(layer):
     if (layer['info']['type'] == 'Pooling'):
         num_out = layer['shape']['input'][0]
     else:
-        num_out = layer['params']['num_output']
+        num_out = layer['params']['num_output'][0]
     if (layer['info']['type'] in ['Deconvolution', 'DepthwiseConv']):
         _, i_h, i_w = layer['shape']['input']
-        k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
-        s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
-        p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
+        k_h, k_w = layer['params']['kernel_h'][0], layer['params']['kernel_w'][0]
+        s_h, s_w = layer['params']['stride_h'][0], layer['params']['stride_w'][0]
+        p_h, p_w = layer['params']['pad_h'][0], layer['params']['pad_w'][0]
         o_h = int((i_h - 1)*s_h + k_h - 2*p_h)
         o_w = int((i_w - 1)*s_w + k_w - 2*p_w)
         return [num_out, o_h, o_w]
     else:
-        if (layer['params']['layer_type'] == '1D'):
+        if (layer['params']['layer_type'][0] == '1D'):
             _, i_w = layer['shape']['input']
-            k_w = layer['params']['kernel_w']
-            s_w = layer['params']['stride_w']
-            p_w = layer['params']['pad_w']
+            k_w = layer['params']['kernel_w'][0]
+            s_w = layer['params']['stride_w'][0]
+            p_w = layer['params']['pad_w'][0]
             o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
             return [num_out, o_w]
-        elif (layer['params']['layer_type'] == '2D'):
+        elif (layer['params']['layer_type'][0] == '2D'):
             _, i_h, i_w = layer['shape']['input']
-            k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
-            s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
-            p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
+            k_h, k_w = layer['params']['kernel_h'][0], layer['params']['kernel_w'][0]
+            s_h, s_w = layer['params']['stride_h'][0], layer['params']['stride_w'][0]
+            p_h, p_w = layer['params']['pad_h'][0], layer['params']['pad_w'][0]
             o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
             o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
             return [num_out, o_h, o_w]
         else:
             _, i_d, i_h, i_w = layer['shape']['input']
-            k_h, k_w, k_d = layer['params']['kernel_h'], layer['params']['kernel_w'],\
-                layer['params']['kernel_d']
-            s_h, s_w, s_d = layer['params']['stride_h'], layer['params']['stride_w'],\
-                layer['params']['stride_d']
-            p_h, p_w, p_d = layer['params']['pad_h'], layer['params']['pad_w'],\
-                layer['params']['pad_d']
+            k_h, k_w, k_d = layer['params']['kernel_h'][0], layer['params']['kernel_w'][0],\
+                layer['params']['kernel_d'][0]
+            s_h, s_w, s_d = layer['params']['stride_h'][0], layer['params']['stride_w'][0],\
+                layer['params']['stride_d'][0]
+            p_h, p_w, p_d = layer['params']['pad_h'][0], layer['params']['pad_w'][0],\
+                layer['params']['pad_d'][0]
             o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
             o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
             o_d = int((i_d + 2 * p_d - k_d) / float(s_d) + 1)
@@ -65,21 +65,21 @@ def filter(layer):
 
 
 def upsample(layer):
-    if (layer['params']['layer_type'] == '1D'):
+    if (layer['params']['layer_type'][0] == '1D'):
         num_out, i_w = layer['shape']['input']
-        s_w = layer['params']['size_w']
+        s_w = layer['params']['size_w'][0]
         o_w = int(i_w*s_w)
         return [num_out, o_w]
-    elif (layer['params']['layer_type'] == '2D'):
+    elif (layer['params']['layer_type'][0] == '2D'):
         num_out, i_h, i_w = layer['shape']['input']
-        s_h, s_w = layer['params']['size_h'], layer['params']['size_w']
+        s_h, s_w = layer['params']['size_h'][0], layer['params']['size_w'][0]
         o_w = int(i_w*s_w)
         o_h = int(i_h*s_h)
         return [num_out, o_h, o_w]
     else:
         num_out, i_h, i_w, i_d = layer['shape']['input']
-        s_h, s_w, s_d = layer['params']['size_h'], layer['params']['size_w'],\
-            layer['params']['size_d']
+        s_h, s_w, s_d = layer['params']['size_h'][0], layer['params']['size_w'][0],\
+            layer['params']['size_d'][0]
         o_w = int(i_w*s_w)
         o_h = int(i_h*s_h)
         o_d = int(i_d*s_d)
@@ -87,7 +87,7 @@ def upsample(layer):
 
 
 def output(layer):
-    return [layer['params']['num_output']]
+    return [layer['params']['num_output'][0]]
 
 
 def flatten(layer):
@@ -99,14 +99,14 @@ def flatten(layer):
 
 def reshape(layer):
     temp = np.zeros(layer['shape']['input'])
-    shape = map(int, layer['params']['dim'].split(','))[1:]
+    shape = map(int, layer['params']['dim'][0].split(','))[1:]
     temp = np.reshape(temp, shape)
     return list(temp.shape[::-1])
 
 
 def repeat(layer):
     shape = layer['shape']['input']
-    shape = shape + [layer['params']['n']]
+    shape = shape + [layer['params']['n'][0]]
     return shape
 
 
@@ -124,7 +124,7 @@ def get_shapes(net):
                 if (not net[layerId]['connection']['input']):
                     raise Exception('Cannot determine shape of Python layer.')
             else:
-                if (net[layerId]['params']['endPoint'] == "1, 0"):
+                if (net[layerId]['params']['endPoint'][0] == "1, 0"):
                     raise Exception('Cannot determine shape of Python layer.')
         if(net[layerId]['info']['type'] in dataLayers):
             stack.append(layerId)

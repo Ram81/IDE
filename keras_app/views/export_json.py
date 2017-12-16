@@ -32,6 +32,11 @@ def export_json(request):
             net_name = 'Net'
         try:
             net = get_shapes(net)
+            # Postprocessing net object to remove state attribute & separate params
+            for layerId in net:
+                for param in net[layerId]['params']:
+                    net[layerId]['params'][param] = net[layerId]['params'][param][0]
+                del net[layerId]['state']
         except BaseException:
             return JsonResponse(
                 {'result': 'error', 'error': str(sys.exc_info()[1])})
