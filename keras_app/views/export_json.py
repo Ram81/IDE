@@ -2,13 +2,11 @@ import json
 import os
 import random
 import string
-import sys
 import yaml
 
 from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from ide.utils.shapes import get_shapes
 from keras.models import Model
 from layers_export import data, convolution, deconvolution, pooling, dense, dropout, embed,\
     recurrent, batch_norm, activation, flatten, reshape, eltwise, concat, upsample, locally_connected,\

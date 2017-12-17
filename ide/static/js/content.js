@@ -192,7 +192,7 @@ class Content extends React.Component {
     });
     this.setState({ net, selectedLayer: null });
   }
-  updateParameters(layer) {
+  updateParameters(layer, net) {
     // obtain the total parameters of the model
     var totalParameters = this.state.totalParameters;
     var weight_params = 0;
@@ -201,7 +201,6 @@ class Content extends React.Component {
     var filter_layers = ["Convolution", "Deconvolution"];
     var fc_layers = ["InnerProduct", "Embed", "Recurrent", "LSTM"];
 
-    // Currently we don't handle layers in which we don't need to consider bias
     if(filter_layers.includes(layer.info.type)) {
       // if layer is Conv or DeConv calculating total parameter of the layer using:
       // N_Input * K_H * K_W * N_Output 
@@ -228,6 +227,21 @@ class Content extends React.Component {
       weight_params = inputParams * layer.params['num_output'][0];
       bias_params = layer.params['num_output'][0];
     }
+    if(layer.info.type == "BatchNorm") {
+      let cnt = 2;
+      const childLayer = net[layer.connection['output'][0]];
+      if(childLayer.info.type == "Scale") {
+        cnt +=1
+        if(childLayer.params['bias_term'] == true)
+          cnt +=1;
+      }
+      weight_params = 2 * layer.shape['output'][0];
+    }
+    if('use_bias' in layer.params) {
+      //console.log(layer.info.type+" "+layer.params['use_bias'][0]);
+      if (layer.params['use_bias'][0] == false)
+        bias_params = 0;
+    }
     totalParameters += (weight_params + bias_params);
 
     // Update the total parameters of model after considering this layer.
@@ -237,7 +251,7 @@ class Content extends React.Component {
     // Iterate over model's each layer & separately add the contribution of each layer
     Object.keys(net).sort().forEach(layerId => {
       const layer = net[layerId];
-      this.updateParameters(layer);
+      this.updateParameters(layer, net);
     });
   }
   loadLayerShapes() {
