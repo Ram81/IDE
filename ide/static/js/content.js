@@ -235,10 +235,9 @@ class Content extends React.Component {
         if(childLayer.params['bias_term'] == true)
           cnt +=1;
       }
-      weight_params = 2 * layer.shape['output'][0];
+      weight_params = cnt * layer.shape['output'][0];
     }
     if('use_bias' in layer.params) {
-      //console.log(layer.info.type+" "+layer.params['use_bias'][0]);
       if (layer.params['use_bias'][0] == false)
         bias_params = 0;
     }

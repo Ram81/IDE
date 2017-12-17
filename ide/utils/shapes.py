@@ -110,12 +110,12 @@ def repeat(layer):
     return shape
 
 
-def handle_concat_layer(outputId, inputId, net):
-    if('input' not in net[outputId]['shape']):
-        shape = net[inputId]['shape']['output']
+def handle_concat_layer(outputLayer, inputLayer):
+    if('input' not in outputLayer['shape']):
+        shape = inputLayer['shape']['output'][:]
     else:
-        old_num_output = net[outputId]['shape']['input'][0]
-        shape = net[inputId]['shape']['output']
+        old_num_output = outputLayer['shape']['input'][0]
+        shape = inputLayer['shape']['output'][:]
         shape[0] += old_num_output
     return shape
 
@@ -173,6 +173,7 @@ def get_shapes(net):
         if(net[layerId]['info']['type'] in dataLayers):
             stack.append(layerId)
 
+
     while(len(stack)):
         layerId = stack[0]
         stack.remove(layerId)
@@ -186,9 +187,9 @@ def get_shapes(net):
             if (not processedLayer[outputId]):
                 # Handling Concat layer separately
                 if (net[outputId]['info']['type'] == "Concat"):
-                    net[outputId]['shape']['input'] = handle_concat_layer(outputId, layerId, net)
+                    net[outputId]['shape']['input'] = handle_concat_layer(net[outputId], net[layerId])
                 else:
-                    net[outputId]['shape']['input'] = net[layerId]['shape']['output']
+                    net[outputId]['shape']['input'] = net[layerId]['shape']['output'][:]
 
                 # Implement topo sort check
                 flag = True
@@ -200,7 +201,7 @@ def get_shapes(net):
                     stack.append(outputId)
             else:
                 if (net[outputId]['info']['type'] == "Concat"):
-                    net[outputId]['shape']['input'] = handle_concat_layer(outputId, layerId, net)
+                    net[outputId]['shape']['input'] = handle_concat_layer(net[outputId], net[layerId])
 
         processedLayer[layerId] = True
 
