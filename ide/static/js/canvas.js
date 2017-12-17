@@ -301,7 +301,10 @@ class Canvas extends React.Component {
         {layers}
       </div>
       <div id='modelParameter'>
-        <p>Total Parameters: {this.props.totalParameters}</p>
+        <p>Total Parameters</p>
+        <div id="content">
+          {this.props.totalParameters}
+        </div>
       </div>
       <div id='icon-plus' className="canvas-icon">
         <p>Press ]</p>

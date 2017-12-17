@@ -192,8 +192,8 @@ class Content extends React.Component {
     });
     this.setState({ net, selectedLayer: null });
   }
-    updateParameters(layer) {
-    // obtain the total parameters of the model computed till now
+  updateParameters(layer) {
+    // obtain the total parameters of the model
     var totalParameters = this.state.totalParameters;
     var weight_params = 0;
     var bias_params = 0;
@@ -201,6 +201,7 @@ class Content extends React.Component {
     var filter_layers = ["Convolution", "Deconvolution"];
     var fc_layers = ["InnerProduct", "Embed", "Recurrent", "LSTM"];
 
+    // Currently we don't handle layers in which we don't need to consider bias
     if(filter_layers.includes(layer.info.type)) {
       // if layer is Conv or DeConv calculating total parameter of the layer using:
       // N_Input * K_H * K_W * N_Output 
@@ -214,25 +215,18 @@ class Content extends React.Component {
 
       weight_params = layer.shape['input'][0] * kernel_params * layer.params['num_output'][0];
       bias_params += layer.params['num_output'][0];
-      
-      //console.log("Conv "+layerId+" "+layer.shape['input'][0]+" "+kernel_params+" "+layer.params['num_output'][0]+" "+(weight_params+bias_params));
-      //console.log("Conv "+layerId+" "+(weight_params+bias_params));
     }
     else if(fc_layers.includes(layer.info.type)) {
-      var inputParams = 1;
       // if layer is one of Recurrent layer or Fully Connected layers calculate parameters using:
       // Num_Input * Num_Ouput
       // if previous layer is D-dimensional then obtain the total inputs by (N1xN2x...xNd)
-      
+      var inputParams = 1;
       for(var i=0;i<layer.shape['input'].length;i++) {
         if(layer.shape['input'][i] != 0)
           inputParams *= layer.shape['input'][i];
       }
       weight_params = inputParams * layer.params['num_output'][0];
       bias_params = layer.params['num_output'][0];
-
-      //console.log("FC "+layerId+" "+inputParams+" "+layer.params['num_output'][0]+" "+(weight_params+bias_params));
-      //console.log("FC "+layerId+" "+(weight_params+bias_params));
     }
     totalParameters += (weight_params + bias_params);
 
@@ -246,7 +240,6 @@ class Content extends React.Component {
       this.updateParameters(layer);
     });
   }
-
   loadLayerShapes() {
     this.dismissAllErrors();
     
