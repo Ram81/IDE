@@ -1,11 +1,11 @@
+import copy
 import sys
 import yaml
-import copy
 
-from utils.shapes import get_shapes
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from utils.shapes import get_shapes
 
 
 def index(request):
@@ -17,6 +17,8 @@ def calculate_parameter(request):
     if request.method == 'POST':
         net = yaml.safe_load(request.POST.get('net'))
         try:
+            # While calling get_shapes we need to remove the flag
+            # added in frontend to show the parameter on pane
             netObj = copy.deepcopy(net)
             for layerId in netObj:
                 for param in netObj[layerId]['params']:

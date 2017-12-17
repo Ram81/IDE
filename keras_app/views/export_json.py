@@ -30,11 +30,6 @@ def export_json(request):
         net_name = request.POST.get('net_name')
         if net_name == '':
             net_name = 'Net'
-        try:
-            net = get_shapes(net)
-        except BaseException:
-            return JsonResponse(
-                {'result': 'error', 'error': str(sys.exc_info()[1])})
 
         layer_map = {
             'ImageData': data,
