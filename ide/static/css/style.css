@@ -110,6 +110,20 @@ body {
   right: 8%;
 }
 
+#modelParameter{
+  margin: 0px;
+  position: fixed;
+  bottom: 4%;
+  left: 22%;
+  width: 180px;
+}
+
+#modelParameter > p{
+  margin: 0px;
+  color: #9ea2a9;
+}
+
+
 .extra-buttons{
   padding-left: 0px;
   font-weight: bold;
