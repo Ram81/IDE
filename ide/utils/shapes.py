@@ -173,7 +173,6 @@ def get_shapes(net):
         if(net[layerId]['info']['type'] in dataLayers):
             stack.append(layerId)
 
-
     while(len(stack)):
         layerId = stack[0]
         stack.remove(layerId)
