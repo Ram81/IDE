@@ -231,8 +231,9 @@ class Content extends React.Component {
       let cnt = 2;
       const childLayer = net[layer.connection['output'][0]];
       if(childLayer.info.type == "Scale") {
-        cnt +=1
-        if(childLayer.params['bias_term'] == true)
+        if(childLayer.params['scale'][0] == true)
+          cnt +=1
+        if(childLayer.params['bias_term'][0] == true)
           cnt +=1;
       }
       weight_params = cnt * layer.shape['output'][0];
