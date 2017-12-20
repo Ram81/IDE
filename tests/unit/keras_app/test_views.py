@@ -82,10 +82,10 @@ class ExportJsonTest(unittest.TestCase):
         net = yaml.safe_load(json.dumps(response['net']))
         net = {'l0': net['HDF5Data']}
         # Currently we can't determine shape of HDF5Data Layer
-        #response = self.client.post(reverse('keras-export'), {'net': json.dumps(net),
+        # response = self.client.post(reverse('keras-export'), {'net': json.dumps(net),
         #                                                      'net_name': ''})
-        #response = json.loads(response.content)
-        #self.assertEqual(response['result'], 'error')
+        # response = json.loads(response.content)
+        # self.assertEqual(response['result'], 'error')
 
 
 # ********** Import json tests **********
