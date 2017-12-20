@@ -11,5 +11,5 @@ urlpatterns = [
     url(r'^tensorflow/', include('tensorflow_app.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^accounts/', include('allauth.urls')),
-    url(r'^model_parameter/', calculate_parameter, name='param-cal'),
+    url(r'^model_parameter/', calculate_parameter, name='calculate-parameter'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
