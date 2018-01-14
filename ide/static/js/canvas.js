@@ -223,6 +223,8 @@ class Canvas extends React.Component {
     this.placeholder = false;
     event.preventDefault();
     if (event.target.id === 'panZoomContainer' && !this.mouseState.pan) {
+      if (this.props.selectedLayer!=null) 
+        this.props.modifyLayer(this.props.net[this.props.selectedLayer], this.props.selectedLayer);
       this.props.changeSelectedLayer(null);
     }
     this.mouseState.pan = false;
@@ -455,7 +457,8 @@ Canvas.propTypes = {
   clickEvent: React.PropTypes.bool,
   totalParameters: React.PropTypes.number,
   setDraggingLayer: React.PropTypes.func,
-  draggingLayer: React.PropTypes.string
+  draggingLayer: React.PropTypes.string,
+  selectedLayer: React.PropTypes.string
 };
 
 export default Canvas;
