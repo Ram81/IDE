@@ -323,10 +323,13 @@ class Content extends React.Component {
   }
   calculateParameters(net) {
     // Iterate over model's each layer & separately add the contribution of each layer
+    var totalParameters = 0;
     Object.keys(net).sort().forEach(layerId => {
       const layer = net[layerId];
-      this.updateParameters(layer, net);
+      net[layerId]['shape']['parameters'] = this.getLayerParameters(layer, net);
+      totalParameters += net[layerId]['shape']['parameters'];
     });
+    this.setState({ net: net, totalParameters: totalParameters});
   }
   loadLayerShapes() {
     this.dismissAllErrors();
