@@ -759,6 +759,10 @@ class Content extends React.Component {
     this.setState({ net });
   }
   saveDb(){
+    if (Object.keys(this.state.net).length == 0) {
+      this.addError("No model available for sharing");
+      return;
+    }
     this.exportPrep(function(netData) {
       Object.keys(netData).forEach(layerId => {
         delete netData[layerId].state;
