@@ -361,7 +361,7 @@ class Content extends React.Component {
     const netObj = JSON.parse(JSON.stringify(this.state.net));
 
     if (Object.keys(netObj).length == 0) {
-      this.addError("No model available for sharing");
+      this.addError("No model available for export");
       return;
     }
 
