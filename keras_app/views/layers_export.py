@@ -1,5 +1,6 @@
 import numpy as np
 
+from lrn import LRN
 from keras.layers import Dense, Activation, Dropout, Flatten, Reshape, Permute, RepeatVector
 from keras.layers import ActivityRegularization, Masking
 from keras.layers import Conv1D, Conv2D, Conv3D, Conv2DTranspose
@@ -569,6 +570,17 @@ def batch_norm(layer, layer_in, layerId, idNext, nextLayer,):
                                           scale=False, center=False)(*layer_in)
     return out
 
+
+# LRN for Tensorflow export only
+
+def tf_lrn(layer, layer_in, layerId):
+    alpha = layer['params']['alpha']
+    beta = layer['params']['beta']
+    k = layer['params']['beta']
+    n = layer['params']['local_size']
+    out = {}
+    out[layerId] = LRN(alpha=alpha, beta=beta, k=k, n=n)(*layer_in)
+    return out
 
 # logic as used in caffe-tensorflow
 # https://github.com/ethereon/caffe-tensorflow/blob/master/kaffe/tensorflow/transformer.py

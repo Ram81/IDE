@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from keras.models import Model
 from layers_export import data, convolution, deconvolution, pooling, dense, dropout, embed,\
     recurrent, batch_norm, activation, flatten, reshape, eltwise, concat, upsample, locally_connected,\
-    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout
+    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout, tf_lrn
 BASE_DIR = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -72,6 +72,9 @@ def export_json(request, is_tf=False):
             'AlphaDropout': alpha_dropout,
             'Scale': ''
         }
+        if is_tf:
+            layer_map['LRN'] = tf_lrn
+            lrn_layers = []
 
         # Check if conversion is possible
         error = []
@@ -131,6 +134,7 @@ def export_json(request, is_tf=False):
                 if (net[layerId]['info']['type'] != 'Scale'):
                     layer_in = [net_out[inputId]
                                 for inputId in net[layerId]['connection']['input']]
+
                 # Need to check if next layer is Scale
                 if (net[layerId]['info']['type'] == 'BatchNorm'):
                     idNext = net[layerId]['connection']['output'][0]
@@ -145,6 +149,9 @@ def export_json(request, is_tf=False):
                     if (type != 'BatchNorm'):
                         error.append(
                             layerId + '(' + net[layerId]['info']['type'] + ')')
+                elif (net[layerId]['info']['type'] == 'LRN'):
+                    net_out.update(layer_map['LRN'](net[layerId], layer_in, layerId))
+                    lrn_layers.append({'id': layerId, 'layer': net[layerId]})
                 else:
                     try:
                         net_out.update(layer_map[net[layerId]['info']['type']](
@@ -173,9 +180,18 @@ def export_json(request, is_tf=False):
         model = Model(inputs=final_input, outputs=final_output, name=net_name)
         json_string = Model.to_json(model)
 
+        model_parsed = json.loads(json_string)
+        if is_tf:
+            for lrn in lrn_layers:
+                for layer in model_parsed['config']['layers']:
+                    if layer['name'] == lrn['id']:
+                        pass
+                        # TODO: Maybe add some handling here
+
         randomId = datetime.now().strftime('%Y%m%d%H%M%S') + randomword(5)
         with open(BASE_DIR + '/media/' + randomId + '.json', 'w') as f:
-            json.dump(json.loads(json_string), f, indent=4)
+            json.dump(model_parsed, f, indent=4)
+
         if not is_tf:
             return JsonResponse({'result': 'success',
                                  'id': randomId,
