@@ -1,7 +1,6 @@
 from keras.layers.core import Layer
 from keras import backend as K
-import tensorflow as tf
-import numpy as np
+
 
 class LRN(Layer):
 

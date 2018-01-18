@@ -572,7 +572,6 @@ def batch_norm(layer, layer_in, layerId, idNext, nextLayer,):
 
 
 # LRN for Tensorflow export only
-
 def tf_lrn(layer, layer_in, layerId):
     alpha = layer['params']['alpha']
     beta = layer['params']['beta']
@@ -581,6 +580,7 @@ def tf_lrn(layer, layer_in, layerId):
     out = {}
     out[layerId] = LRN(alpha=alpha, beta=beta, k=k, n=n)(*layer_in)
     return out
+
 
 # logic as used in caffe-tensorflow
 # https://github.com/ethereon/caffe-tensorflow/blob/master/kaffe/tensorflow/transformer.py
