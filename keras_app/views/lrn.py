@@ -35,6 +35,7 @@ class LRN(Layer):
                   "alpha": self.alpha,
                   "k": self.k,
                   "beta": self.beta,
-                  "n": self.n}
+                  "n": self.n,
+                  "name": self.name}
         base_config = super(LRN, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
