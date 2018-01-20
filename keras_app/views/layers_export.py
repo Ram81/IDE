@@ -16,7 +16,7 @@ from keras.layers import BatchNormalization
 from keras.layers import GaussianNoise, GaussianDropout, AlphaDropout
 from keras.layers import Input
 from keras import regularizers
-from lrn import LRN
+from ..custom_layers.lrn import LRN
 
 
 fillerMap = {

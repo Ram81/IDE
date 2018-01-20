@@ -27,7 +27,7 @@ with open(output_fld + input_file, 'r') as f:
     json_str = f.read()
 
 json_str = json_str.strip("'<>() ").replace('\'', '\"')
-lrn = imp.load_source('LRN', BASE_DIR + '/keras_app/views/lrn.py')
+lrn = imp.load_source('LRN', BASE_DIR + '/keras_app/custom_layers/lrn.py')
 model = model_from_json(json_str, {'LRN': lrn.LRN})
 
 sess = K.get_session()
