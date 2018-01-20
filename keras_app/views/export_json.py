@@ -10,7 +10,7 @@ from django.http import JsonResponse
 from keras.models import Model
 from layers_export import data, convolution, deconvolution, pooling, dense, dropout, embed,\
     recurrent, batch_norm, activation, flatten, reshape, eltwise, concat, upsample, locally_connected,\
-    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout, tf_lrn
+    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout, lrn
 BASE_DIR = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -70,11 +70,9 @@ def export_json(request, is_tf=False):
             'GaussianNoise': gaussian_noise,
             'GaussianDropout': gaussian_dropout,
             'AlphaDropout': alpha_dropout,
-            'Scale': ''
+            'Scale': '',
+            'LRN': lrn
         }
-        if is_tf:
-            layer_map['LRN'] = tf_lrn
-
         # Check if conversion is possible
         error = []
         for layerId in net:

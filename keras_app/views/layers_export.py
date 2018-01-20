@@ -572,7 +572,7 @@ def batch_norm(layer, layer_in, layerId, idNext, nextLayer,):
 
 
 # LRN for Tensorflow export only
-def tf_lrn(layer, layer_in, layerId):
+def lrn(layer, layer_in, layerId):
     alpha = layer['params']['alpha']
     beta = layer['params']['beta']
     k = layer['params']['beta']
