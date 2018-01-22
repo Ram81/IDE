@@ -11,6 +11,7 @@ from keras.models import Model
 from layers_export import data, convolution, deconvolution, pooling, dense, dropout, embed,\
     recurrent, batch_norm, activation, flatten, reshape, eltwise, concat, upsample, locally_connected,\
     permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout, lrn
+from ..custom_layers import config as custom_layers_config
 BASE_DIR = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -70,13 +71,22 @@ def export_json(request, is_tf=False):
             'GaussianNoise': gaussian_noise,
             'GaussianDropout': gaussian_dropout,
             'AlphaDropout': alpha_dropout,
-            'Scale': '',
+            'Scale': ''
+        }
+
+        custom_layers_map = {
             'LRN': lrn
         }
+
         # Check if conversion is possible
         error = []
+        custom_layers = []
+        for key, value in custom_layers_map.iteritems():
+            layer_map[key] = value
         for layerId in net:
             layerType = net[layerId]['info']['type']
+            if (layerType in custom_layers_map):
+                custom_layers.append(layerType)
             if ('Loss' in layerType or layerType ==
                     'Accuracy' or layerType in layer_map):
                 pass
@@ -176,10 +186,19 @@ def export_json(request, is_tf=False):
         randomId = datetime.now().strftime('%Y%m%d%H%M%S') + randomword(5)
         with open(BASE_DIR + '/media/' + randomId + '.json', 'w') as f:
             json.dump(json.loads(json_string), f, indent=4)
+
+        custom_layers_response = []
+        for layer in set(custom_layers):
+            layer_data = {'name': layer}
+            layer_data.update(custom_layers_config.config[layer])
+            custom_layers_response.append(layer_data)
+
         if not is_tf:
             return JsonResponse({'result': 'success',
                                  'id': randomId,
                                  'name': randomId + '.json',
-                                 'url': '/media/' + randomId + '.json'})
+                                 'url': '/media/' + randomId + '.json',
+                                 'customLayers': custom_layers_response
+                                 })
         else:
-            return randomId
+            return {'randomId': randomId, 'customLayers': custom_layers_response}
