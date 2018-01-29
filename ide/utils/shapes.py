@@ -93,7 +93,7 @@ def output(layer):
 def flatten(layer):
     out = 1
     for i in layer['shape']['input']:
-        if (i>0):
+        if (i > 0):
             out *= i
     return [out]
 
