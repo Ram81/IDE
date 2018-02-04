@@ -273,6 +273,11 @@ class Content extends React.Component {
     });
   }
   getLayerParameters(layer, net) {
+    // check for layers with no shape to avoid errors
+    // this can be improved further.
+    if (layer['shape']['input'] == null || layer['shape']['output'] == null) {
+      return 0;
+    }
     // obtain the total parameters of the model
     var weight_params = 0;
     var bias_params = 0;
