@@ -835,6 +835,8 @@ class Content extends React.Component {
       success: function (response) {
         if (response.result === 'success'){
           this.initialiseImportedNet(response.net,response.net_name);
+          if (Object.keys(this.state.net).length)
+            this.loadLayerShapes();
         } else if (response.result === 'error'){
           this.addError(response.error);
         }
