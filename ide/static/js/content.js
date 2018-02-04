@@ -342,7 +342,6 @@ class Content extends React.Component {
   }
   loadLayerShapes() {
     this.dismissAllErrors();
-    console.log(this.state.net);
     // Making call to endpoint inorder to obtain shape of each layer i.e. input & output shape
     const netData = JSON.parse(JSON.stringify(this.state.net));
     $.ajax({
@@ -355,7 +354,6 @@ class Content extends React.Component {
       success : function (response) {
         const net = response.net;
         // call to intermediate method which will iterate over layers & calculate the parameters separately
-        console.log("ouo");
         this.calculateParameters(net);
         // update the net object with shape attributes added
         this.setState({ net });  
@@ -839,8 +837,6 @@ class Content extends React.Component {
           if (Object.keys(response.net).length){
             this.calculateParameters(response.net);
           }
-          else
-            console.log("False");
         } else if (response.result === 'error'){
           this.addError(response.error);
         }
