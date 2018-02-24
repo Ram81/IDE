@@ -131,18 +131,16 @@ def import_graph_def(request):
 
         for node in graph.get_operations():
             name = get_layer_name(node.name)
-            rnn_flag = False
             layer_type = get_layer_type(node.name)
             if node.type == 'NoOp':
                 continue
             # separate case for a rnn layer
             if layer_type == 'rnn':
                 if re.match('.*CellZeroState.*', name):
-                    rnn_flag = True
                     layer_type = name.split('ZeroState')[0]
                     prev_rnn_layer = name
                 else:
-                    if not prev_rnn_layer is None:
+                    if prev_rnn_layer is not None:
                         rnn_map[name] = prev_rnn_layer
                         name = prev_rnn_layer
             if name not in d:
@@ -188,6 +186,7 @@ def import_graph_def(request):
             if name in rnn_map:
                 name = rnn_map[name]
             layer = d[name]
+            # to avoid exceptions in case layer has unknown type
             if len(layer['type']) == 0:
                 continue
             if layer['type'][0] == 'Input':
