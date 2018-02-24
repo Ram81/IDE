@@ -15,13 +15,26 @@ op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'MaxPool': 'Poo
                 'LeakyRelu': 'ReLU', 'Elu': 'ELU', 'Softsign': 'Softsign',
                 'Softplus': 'Softplus'}
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
-            'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise'}
+            'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise',
+            'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
+            'RNNCell': 'RNN'}
+# weights and bias intializer map more initializer need to be added
+intializer_map = {'random_uniform': 'RandomUniform', 'zeros': 'Zeros'}
+
+
+def check_rnn(node_name):
+    # check if an op is of rnn layer
+    if str(node_name).split('/')[0] == 'rnn':
+        return True
+    return False
 
 
 def get_layer_name(node_name):
     i = node_name.find('/')
     if i == -1:
         name = str(node_name)
+    elif check_rnn(node_name):
+        name = str(node_name).split('/')[1]
     else:
         name = str(node_name[:i])
     return name
@@ -29,7 +42,9 @@ def get_layer_name(node_name):
 
 def get_layer_type(node_name):
     i = node_name.find('_')
-    if i == -1:
+    if check_rnn(node_name):
+        name = 'rnn'
+    elif i == -1:
         name = str(node_name)
     else:
         name = str(node_name[:i])
@@ -110,22 +125,39 @@ def import_graph_def(request):
         tf.import_graph_def(graph_def, name='')
         graph = tf.get_default_graph()
 
+        # to hold name of most recent rnn layer
+        prev_rnn_layer = None
+        rnn_map = {}
+
         for node in graph.get_operations():
             name = get_layer_name(node.name)
+            rnn_flag = False
+            layer_type = get_layer_type(node.name)
             if node.type == 'NoOp':
                 continue
+            # separate case for a rnn layer
+            if layer_type == 'rnn':
+                if re.match('.*CellZeroState.*', name):
+                    rnn_flag = True
+                    layer_type = name.split('ZeroState')[0]
+                    prev_rnn_layer = name
+                else:
+                    if not prev_rnn_layer is None:
+                        rnn_map[name] = prev_rnn_layer
+                        name = prev_rnn_layer
             if name not in d:
                 d[name] = {'type': [], 'input': [], 'output': [], 'params': {}}
                 order.append(name)
             if node.type in op_layer_map:
                 d[name]['type'].append(op_layer_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
-                layer_type = get_layer_type(node.name)
                 if layer_type in name_map:
                     if name_map[layer_type] not in d[name]['type']:
                         d[name]['type'].append(name_map[layer_type])
             for input_tensor in node.inputs:
                 input_layer_name = get_layer_name(input_tensor.op.name)
+                if input_layer_name in rnn_map:
+                    input_layer_name = rnn_map[input_layer_name]
                 if input_layer_name != name:
                     d[name]['input'].append(input_layer_name)
                     if name not in d[input_layer_name]['output']:
@@ -153,11 +185,16 @@ def import_graph_def(request):
             if node.type == 'NoOp':
                 continue
             name = get_layer_name(node.name)
+            if name in rnn_map:
+                name = rnn_map[name]
             layer = d[name]
+            if len(layer['type']) == 0:
+                continue
             if layer['type'][0] == 'Input':
                 # NHWC data format
-                layer['params']['dim'] = str(map(int, [node.get_attr('shape').dim[i].size
-                                                       for i in [0, 1, 2, 3]]))[1:-1]
+                input_dim = node.get_attr('shape').dim
+                layer['params']['dim'] = str(map(int, [dim.size
+                                                       for dim in input_dim]))[1:-1]
 
             elif layer['type'][0] == 'Convolution':
                 if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
@@ -286,6 +323,34 @@ def import_graph_def(request):
                     layer['params']['seed'] = node.get_attr('seed')
                 if ('training' in node.node_def.attr):
                     layer['params']['trainable'] = node.get_attr('training')
+
+            elif layer['type'][0] == 'LSTM':
+                if re.match('.*'+name+'/Const', str(node.name)):
+                    try:
+                        layer['params']['num_output'] = node.get_attr(
+                            'value').int_val[0]
+                    except:
+                        pass
+                if re.match('.*/kernel/Initializer.*', str(node.name)):
+                    w_filler = str(node.name).split('/')[4]
+                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                if re.match('.*/bias/Initializer.*', str(node.name)):
+                    b_filler = str(node.name).split('/')[4]
+                    layer['params']['weight_filler'] = intializer_map[b_filler]
+
+            elif layer['type'][0] == 'RNN':
+                if re.match('.*'+name+'/Const', str(node.name)):
+                    try:
+                        layer['params']['num_output'] = node.get_attr(
+                            'value').int_val[0]
+                    except:
+                        pass
+                if re.match('.*/kernel/Initializer.*', str(node.name)):
+                    w_filler = str(node.name).split('/')[4]
+                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                if re.match('.*/bias/Initializer.*', str(node.name)):
+                    b_filler = str(node.name).split('/')[4]
+                    layer['params']['weight_filler'] = intializer_map[b_filler]
         net = {}
         batch_norms = []
         for key in d.keys():
