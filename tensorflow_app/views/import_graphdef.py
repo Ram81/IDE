@@ -19,7 +19,11 @@ name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
             'RNNCell': 'RNN'}
 # weights and bias intializer map more initializer need to be added
-intializer_map = {'random_uniform': 'RandomUniform', 'zeros': 'Zeros'}
+intializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
+                  'constant': 'Constant','zeros': 'Zeros', 'ones': 'Ones',
+                  'identity': 'Identity', 'truncated_normal': 'TruncatedNormal',
+                  'orthogonal': 'Orthogonal', 'variance_scaling': 'VarianceScaling',
+                  'uniform_unit_scaling': 'VarianceScaling'}
 
 
 def check_rnn(node_name):
@@ -336,6 +340,9 @@ def import_graph_def(request):
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
                     layer['params']['weight_filler'] = intializer_map[b_filler]
+                if re.match('.*/while/.*/add/y', str(node.name)):
+                    layer['params']['unit_forget_bias'] = node.get_attr(
+                        'value').float_val[0]
 
             elif layer['type'][0] == 'RNN':
                 if re.match('.*'+name+'/Const', str(node.name)):
@@ -350,6 +357,9 @@ def import_graph_def(request):
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
                     layer['params']['weight_filler'] = intializer_map[b_filler]
+                if re.match('.*/while/.*/add/y', str(node.name)):
+                    layer['params']['unit_forget_bias'] = node.get_attr(
+                        'value').float_val[0]
         net = {}
         batch_norms = []
         for key in d.keys():
