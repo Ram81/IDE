@@ -20,7 +20,7 @@ name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'RNNCell': 'RNN'}
 # weights and bias intializer map more initializer need to be added
 intializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
-                  'constant': 'Constant','zeros': 'Zeros', 'ones': 'Ones', 
+                  'constant': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
                   'identity': 'Identity', 'truncated_normal': 'TruncatedNormal',
                   'orthogonal': 'Orthogonal', 'variance_scaling': 'VarianceScaling',
                   'uniform_unit_scaling': 'VarianceScaling'}
