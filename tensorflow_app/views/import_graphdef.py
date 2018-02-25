@@ -21,9 +21,7 @@ name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
 # weights and bias intializer map more initializer need to be added
 intializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
                   'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
-                  'identity': 'Identity', 'truncated_normal': 'TruncatedNormal',
-                  'orthogonal': 'Orthogonal', 'variance_scaling': 'VarianceScaling',
-                  'uniform_unit_scaling': 'VarianceScaling'}
+                  'eye': 'Identity', 'truncated_normal': 'TruncatedNormal'}
 # separate activation map for rnn layers
 activation_map = {'Relu': 'relu', 'Elu': 'elu', 'Softsign': 'softsign',
                   'Softplus': 'softplus', 'Sigmoid': 'sigmoid', 'Tanh': 'tanh',
