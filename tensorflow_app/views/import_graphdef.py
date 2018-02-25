@@ -17,13 +17,17 @@ op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'MaxPool': 'Poo
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise',
             'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
-            'RNNCell': 'RNN'}
+            'RNNCell': 'RNN', 'GRUCell': 'GRU'}
 # weights and bias intializer map more initializer need to be added
 intializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
-                  'constant': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
+                  'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
                   'identity': 'Identity', 'truncated_normal': 'TruncatedNormal',
                   'orthogonal': 'Orthogonal', 'variance_scaling': 'VarianceScaling',
                   'uniform_unit_scaling': 'VarianceScaling'}
+# separate activation map for rnn layers
+activation_map = {'Relu': 'relu', 'Elu': 'elu', 'Softsign': 'softsign',
+                  'Softplus': 'softplus', 'Sigmoid': 'sigmoid', 'Tanh': 'tanh',
+                  'Softmax': 'softmax'}
 
 
 def check_rnn(node_name):
@@ -339,10 +343,14 @@ def import_graph_def(request):
                     layer['params']['weight_filler'] = intializer_map[w_filler]
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
-                    layer['params']['weight_filler'] = intializer_map[b_filler]
+                    layer['params']['bias_filler'] = intializer_map[b_filler]
                 if re.match('.*/while/.*/add/y', str(node.name)):
                     layer['params']['unit_forget_bias'] = node.get_attr(
                         'value').float_val[0]
+                if re.match('.*/while/.*/', str(node.name)):
+                    activation = str(node.name).split('/')
+                    if len(activation) == 4 and activation[3] in activation_map:
+                        layer['params']['recurrent_activation'] = activation_map[activation[3]]
 
             elif layer['type'][0] == 'RNN':
                 if re.match('.*'+name+'/Const', str(node.name)):
@@ -356,10 +364,25 @@ def import_graph_def(request):
                     layer['params']['weight_filler'] = intializer_map[w_filler]
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
-                    layer['params']['weight_filler'] = intializer_map[b_filler]
-                if re.match('.*/while/.*/add/y', str(node.name)):
-                    layer['params']['unit_forget_bias'] = node.get_attr(
-                        'value').float_val[0]
+                    layer['params']['bias_filler'] = intializer_map[b_filler]
+
+            elif layer['type'][0] == 'GRU':
+                if re.match('.*'+name+'/Const', str(node.name)):
+                    try:
+                        layer['params']['num_output'] = node.get_attr(
+                            'value').int_val[0]
+                    except:
+                        pass
+                if re.match('.*/gates/kernel/Initializer.*', str(node.name)):
+                    w_filler = str(node.name).split('/')[5]
+                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                if re.match('.*/gates/bias/Initializer.*', str(node.name)):
+                    b_filler = str(node.name).split('/')[5]
+                    layer['params']['bias_filler'] = intializer_map[b_filler]
+                if re.match('.*/while/.*/', str(node.name)):
+                    activation = str(node.name).split('/')
+                    if len(activation) == 4 and activation[3] in activation_map:
+                        layer['params']['recurrent_activation'] = activation_map[activation[3]]
         net = {}
         batch_norms = []
         for key in d.keys():
