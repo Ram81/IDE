@@ -46,7 +46,7 @@ def filter(layer):
                 p_w = layer['params']['pad_w']
                 o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
             except:
-                raise Exception('Cannot determine shape of Conv1D layer')
+                return [num_out, 0]
             return [num_out, o_w]
         elif (layer['params']['layer_type'] == '2D'):
             try:
@@ -57,7 +57,7 @@ def filter(layer):
                 o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
                 o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
             except:
-                raise Exception('Cannot determine shape of Conv2D layer')
+                return [num_out, 0, 0]
             return [num_out, o_h, o_w]
         else:
             try:
@@ -72,7 +72,7 @@ def filter(layer):
                 o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
                 o_d = int((i_d + 2 * p_d - k_d) / float(s_d) + 1)
             except:
-                raise Exception('Cannot determine shape of Conv3D layer')
+                return [num_out, 0, 0, 0]
             return [num_out, o_d, o_h, o_w]
 
 
