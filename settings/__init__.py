@@ -4,7 +4,7 @@ from __future__ import absolute_import
 # TODO: Add support for test and production environment settings
 
 try:
-    from .dev import *
+    from .dev import * # noqa
     print("Using Dev settings")
 except ImportError:
     pass
