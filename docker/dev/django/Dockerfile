@@ -47,7 +47,7 @@ WORKDIR /code
 
 ADD . /code
 
-COPY settings/dev.sample.py settings/dev.py
+COPY settings/dev.sample.py /code/settings/dev.py
 
 RUN pip install -r requirements/dev.txt
 
