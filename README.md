@@ -132,7 +132,6 @@ Models                                                                      | Ca
 [Seq2Seq Translation](https://arxiv.org/abs/1409.3215)                      |   √   |   ×   |     ×      |
 [VQA](https://github.com/iamaaditya/VQA_Demo)                               |   √   |   √   |     √      |
 
-
 ### Documentation
 * [Using a Keras model exported from Fabrik](https://github.com/Cloud-CV/Fabrik/blob/master/tutorials/keras_json_usage_1.md)
 * [Loading a Keras model exported from Fabrik and printing its summary](https://github.com/Cloud-CV/Fabrik/blob/master/tutorials/keras_json_usage_2.md)
