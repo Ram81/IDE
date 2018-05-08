@@ -123,13 +123,13 @@ Models                                                                      | Ca
 [ResNet 101](https://arxiv.org/abs/1512.03385)                              |   √   |   √   |     √      |
 [VGG 16](http://arxiv.org/abs/1409.1556.pdf)                                |   √   |   √   |     √      |
 [GoogLeNet](https://arxiv.org/pdf/1610.02357.pdf)                           |   √   |   ×   |     ×      |
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   ×   |     ×      |
 [DenseNet](https://arxiv.org/abs/1608.06993)                                |   √   |   ×   |     ×      |
 [AllCNN](https://arxiv.org/abs/1412.6806)                                   |   √   |   ×   |     ×      |
 [AlexNet](http://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks)                                 |   √   |   ×   |     ×      |
 [FCN32 Pascal](https://www.cv-foundation.org/openaccess/content_cvpr_2015/html/Long_Fully_Convolutional_Networks_2015_CVPR_paper.html) |   √   |   ×   |     ×      |
 [YoloNet](https://arxiv.org/abs/1506.02640)                                 |   √   |   √   |     √      |
-[Seq2Seq Translation](https://arxiv.org/abs/1409.3215)                      |   √   |   ×   |     ×      |
+[Pix2Pix](https://github.com/phillipi/pix2pix)                              |   √   |   ×   |     ×      |
 [VQA](https://github.com/iamaaditya/VQA_Demo)                               |   √   |   √   |     √      |
 
 ### Documentation
