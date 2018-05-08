@@ -30,6 +30,8 @@ if [ ! -d $HOME/caffe/caffe ]; then
 		echo "export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python" >> ~/.bash_profile
 fi
 export PYCAFFE_ROOT=$HOME/caffe/caffe/python
+export PYTHONPATH=$PYCAFFEROOT:$PYTHONPATH
+export PATH=$HOME/caffe/caffe/build/tools:$PYCAFFE_ROOT:$PATH
 echo "#################### Caffe Install Complete! ####################"
 
 echo "Installing Tensorflow dependencies"
