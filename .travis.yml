@@ -24,10 +24,6 @@ install:
   - nvm use stable
   - npm install
 
-before_install:
-  - sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler cmake
-  - sudo apt-get install --no-install-recommends libboost-all-dev
-
 before_script:
   - export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python
   - export LD_PRELOAD="/usr/lib/libtcmalloc.so.4"
@@ -43,6 +39,7 @@ before_script:
 script:
   - flake8 ./
   - npm run ci
+  - python -m "import caffe"
   - coverage run --source=caffe_app,keras_app,ide/utils manage.py test
 
 after_success:
