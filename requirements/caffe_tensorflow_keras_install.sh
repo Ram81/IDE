@@ -26,11 +26,10 @@ if [ ! -d $HOME/caffe/caffe ]; then
 		cd build
 		cmake -DCPU_ONLY=1 -DBUILD_python_layer=1 ..
 		make -j"$(nproc)"
-        make pycaffe
-        echo "pycaffe"
 		
 		echo "export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python" >> ~/.bash_profile
 fi
+export PYCAFFE_ROOT=$HOME/caffe/caffe/python
 echo "#################### Caffe Install Complete! ####################"
 
 echo "Installing Tensorflow dependencies"
