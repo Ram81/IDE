@@ -24,6 +24,10 @@ install:
   - nvm use stable
   - npm install
 
+before_install:
+  - sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev libgflags-dev libgoogle-glog-dev liblmdb-dev protobuf-compiler cmake
+  - sudo apt-get install --no-install-recommends libboost-all-dev
+
 before_script:
   - export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python
   - export LD_PRELOAD="/usr/lib/libtcmalloc.so.4"
