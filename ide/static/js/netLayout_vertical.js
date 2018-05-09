@@ -5,7 +5,7 @@
 // will work with all prototxts which follows our assumption
 // but the UI may not be clean.
 
-export default function(net){
+export default function(net) {
   let map = {};
   let position = {};
   let processed = {};
@@ -27,7 +27,7 @@ export default function(net){
   the algorithm checks if the location at that depth is occupied by any other node
   along the X direction, if yes, the closest available right or left position is
   assigned */
-  function allocatePosition(layerId, preferredPosition){
+  function allocatePosition(layerId, preferredPosition) {
     if (!map.hasOwnProperty(preferredPosition[1])) {
       map[preferredPosition[1]] = [];
     }
@@ -57,7 +57,8 @@ export default function(net){
         i = i + 2;
       }
 
-    } else {
+    }
+    else {
       position[layerId] = preferredPosition;
       map[preferredPosition[1]].push(position[layerId][0]);
       return;
@@ -96,14 +97,16 @@ export default function(net){
 
     parentId = parentMap[layerId];
     inputLength = net[layerId].connection.input.length; // No. of parents
-    if (parentId != null){
+    if (parentId != null) {
       outputLength = net[parentId].connection.output.length;
     }
     if (parentId === null) { // First node
       position[layerId] = [0,0];
-    } else if(inputLength === 1 && outputLength === 1){ // Simple sequential NN structure
+    }
+    else if(inputLength === 1 && outputLength === 1) { // Simple sequential NN structure
       allocatePosition(layerId, [position[parentId][0], position[parentId][1]+1]);
-    } else if (inputLength > 1){ // e.g. Concat layer in GoogLeNet
+    }
+    else if (inputLength > 1) { // e.g. Concat layer in GoogLeNet
       let sum = 0, mean = 0, max = 0;
       net[layerId].connection.input.forEach(inputId => {
         sum = sum + position[inputId][0]; // To center node among the preceeding nodes
@@ -113,7 +116,8 @@ export default function(net){
       });
       mean = Math.floor(sum / inputLength);
       allocatePosition(layerId, [mean, max + 1]);
-    } else if (inputLength === 1 && outputLength != 1) { // e.g. inception block
+    }
+    else if (inputLength === 1 && outputLength != 1) { // e.g. inception block
       let index = net[parentId].connection.output.indexOf(layerId);
       allocatePosition(layerId, [position[parentId][0] + (outputLength - 1) - 2 * index, position[parentId][1] + 1]);
     }
@@ -134,16 +138,17 @@ export default function(net){
     let parentX = position[layer.connection.input[0]];
     let currentX = position[layerId][0];
     let y_space = 40;
+    let prev_top = 0;
+
     if (parentX){
       parentX = parentX[0];
     }
     if ($.inArray(layer.info.type, combined_layers) != -1 && parentX==currentX){
       y_space = 0;
     }
-    let prev_top = 0;
 
     // Finding the position of the last(deepest) connected layer
-    if (net[layer.connection.input[0]] != undefined){
+    if (net[layer.connection.input[0]] != undefined) {
       prev_top = 0;
       for (let j=0; j<layer.connection.input.length; j++){
         // safety check for corner cases
@@ -169,7 +174,7 @@ export default function(net){
         let overlapFlag = false;
         // checking for overlapping layer div's by use of there height & width.
         for(let topC = Math.max(0,top - 40);topC<(top+40);topC++) {
-          if(mapp.hasOwnProperty(topC)){
+          if(mapp.hasOwnProperty(topC)) {
             let xPositions = mapp[topC].slice();
             for(let j=0;j<xPositions.length;j++) {
               if(xPositions[j]>=(left-130) && xPositions[j]<=(left+135)) {
