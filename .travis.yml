@@ -28,7 +28,6 @@ install:
 before_script:
   - export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python
   - export LD_PRELOAD=/usr/lib/libtcmalloc.so.4
-  - export LD_LIBRARY_PATH=~/local/lib
   - export PYCAFFE_ROOT=$HOME/caffe/caffe/python
   - export PATH=$HOME/caffe/caffe/build/tools:$PYCAFFE_ROOT:$PATH
   - psql -c "CREATE DATABASE fabrik" -U postgres

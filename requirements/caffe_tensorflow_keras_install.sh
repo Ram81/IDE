@@ -1,5 +1,6 @@
 # Generic dependencies
 echo "Installing generic dependencies"
+sudo apt-get update
 sudo apt-get -y install git libatlas-base-dev python-protobuf python-numpy python-scipy python-h5py unzip make libblas-dev liblapack-dev libatlas-base-dev gfortran python-pip python-dev
 pip install numpy scipy scikit-image
 
@@ -32,8 +33,7 @@ fi
 echo "#################### Caffe Install Complete! ####################"
 
 echo "Installing Tensorflow dependencies"
-sudo apt-get update
-sudo apt-get -y install python-pip python-dev google-perftools
+sudo apt-get -y install python-pip python-dev google-perftools libgoogle-glog-dev
 export LD_PRELOAD="/usr/lib/libtcmalloc.so.4"
 
 echo "Installing Tensorflow"
