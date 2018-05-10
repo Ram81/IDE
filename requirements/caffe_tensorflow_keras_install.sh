@@ -32,6 +32,7 @@ fi
 echo "#################### Caffe Install Complete! ####################"
 
 echo "Installing Tensorflow dependencies"
+sudo apt-get update
 sudo apt-get -y install python-pip python-dev google-perftools
 export LD_PRELOAD="/usr/lib/libtcmalloc.so.4"
 
