@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import math
 import re
-import json
 import urllib2
 from urlparse import urlparse
 
@@ -165,13 +164,12 @@ def import_graph_def(request):
                 continue
             name = get_layer_name(node.name)
             layer = d[name]
-            if len(layer['type']) == 0:
-                #print(node.name)
-                continue
+
             if layer['type'][0] == 'Input':
                 # NHWC data format
                 dim = node.get_attr('shape').dim
-                layer['params']['dim'] = str(map(int, [dim[i].size if dim[i].size != -1 else 1 for i in [0, 3, 1, 2]]))[1:-1]
+                layer['params']['dim'] = str(map(int, [dim[i].size if dim[i].size != -1 else 1
+                                                 for i in [0, 3, 1, 2]]))[1:-1]
 
             elif layer['type'][0] == 'Convolution':
                 if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':

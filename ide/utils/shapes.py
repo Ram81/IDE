@@ -34,8 +34,10 @@ def filter(layer):
         k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
         s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
         p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
-        o_h = int(round((2 * p_h - k_h + i_h) / float(s_h) + 1)) # int((i_h - 1)*s_h + k_h - 2*p_h)
-        o_w = int(round((2 * p_w - k_w + i_w) / float(s_w) + 1)) # int((i_w - 1)*s_w + k_w - 2*p_w)
+        # int((i_h - 1)*s_h + k_h - 2*p_h)
+        # int((i_w - 1)*s_w + k_w - 2*p_w)
+        o_h = int(round((2 * p_h - k_h + i_h) / float(s_h) + 1))
+        o_w = int(round((2 * p_w - k_w + i_w) / float(s_w) + 1))
 
         return [num_out, o_h, o_w]
     else:
