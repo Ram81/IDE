@@ -26,6 +26,8 @@ def export_json(request, is_tf=False):
     if request.method == 'POST':
         net = yaml.safe_load(request.POST.get('net'))
         net_name = request.POST.get('net_name')
+        with open("param.txt", "w") as f:
+            f.write(json.dumps(net, indent=4))
         if net_name == '':
             net_name = 'Net'
 

@@ -5,17 +5,25 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import math
 import re
+import json
 import urllib2
 from urlparse import urlparse
 
 # map from operation name(tensorflow) to layer name(caffe)
 op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'MaxPool': 'Pooling',
-                'MatMul': 'InnerProduct', 'Relu': 'ReLU', 'Softmax': 'Softmax', 'LRN': 'LRN',
-                'Concat': 'Concat', 'AvgPool': 'Pooling', 'Reshape': 'Flatten',
-                'LeakyRelu': 'ReLU', 'Elu': 'ELU', 'Softsign': 'Softsign',
-                'Softplus': 'Softplus'}
+                'MatMul': 'InnerProduct', 'LRN': 'LRN', 'Concat': 'Concat',
+                'AvgPool': 'Pooling', 'Reshape': 'Flatten', 'Conv2DBackpropInput': 'Deconvolution'}
+
+activation_map = {'Sigmoid': 'Sigmoid', 'Softplus': 'Softplus', 'Softsign': 'Softsign',
+                  'Elu': 'ELU', 'LeakyRelu': 'ReLU', 'Softmax': 'Softmax',
+                  'Relu': 'ReLU', 'Tanh': 'TanH', 'SELU': 'SELU'}
+
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise'}
+
+initializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
+                   'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones', 'eye': 'Identity',
+                   'truncated_normal': 'TruncatedNormal'}
 
 
 def get_layer_name(node_name):
@@ -119,11 +127,14 @@ def import_graph_def(request):
                 order.append(name)
             if node.type in op_layer_map:
                 d[name]['type'].append(op_layer_map[node.type])
+            elif node.type in activation_map:
+                d[name]['type'].append(activation_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
                 layer_type = get_layer_type(node.name)
                 if layer_type in name_map:
                     if name_map[layer_type] not in d[name]['type']:
                         d[name]['type'].append(name_map[layer_type])
+
             for input_tensor in node.inputs:
                 input_layer_name = get_layer_name(input_tensor.op.name)
                 if input_layer_name != name:
@@ -154,10 +165,13 @@ def import_graph_def(request):
                 continue
             name = get_layer_name(node.name)
             layer = d[name]
+            if len(layer['type']) == 0:
+                #print(node.name)
+                continue
             if layer['type'][0] == 'Input':
                 # NHWC data format
-                layer['params']['dim'] = str(map(int, [node.get_attr('shape').dim[i].size
-                                                       for i in [0, 1, 2, 3]]))[1:-1]
+                dim = node.get_attr('shape').dim
+                layer['params']['dim'] = str(map(int, [dim[i].size if dim[i].size != -1 else 1 for i in [0, 3, 1, 2]]))[1:-1]
 
             elif layer['type'][0] == 'Convolution':
                 if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
@@ -182,9 +196,40 @@ def import_graph_def(request):
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
 
+            elif layer['type'][0] == 'Deconvolution':
+                if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
+                    # since conv takes weights as input, this node will be processed first
+                    # acquired parameters are then required in get_padding function
+                    layer['params']['kernel_h'] = int(
+                        node.get_attr('shape').dim[0].size)
+                    layer['params']['kernel_w'] = int(
+                        node.get_attr('shape').dim[1].size)
+                    layer['params']['num_output'] = int(
+                        node.get_attr('shape').dim[3].size)
+                # extracting weight initializer
+                if re.match('.*/kernel/Initializer.*', str(node.name)):
+                    w_filler = str(node.name).split('/')[3]
+                    layer['params']['weight_filler'] = initializer_map[w_filler]
+                # extracting bias initializer
+                if re.match('.*/bias/Initializer.*', str(node.name)):
+                    b_filler = str(node.name).split('/')[3]
+                    layer['params']['bias_filler'] = initializer_map[b_filler]
+                # extracting stride height & width
+                if str(node.type) == 'Conv2DBackpropInput':
+                    layer['params']['stride_h'] = int(
+                        node.get_attr('strides')[1])
+                    layer['params']['stride_w'] = int(
+                        node.get_attr('strides')[2])
+                    try:
+                        layer['params']['pad_h'], layer['params']['pad_w'] = \
+                            get_padding(node, layer)
+                    except TypeError:
+                        return JsonResponse({'result': 'error', 'error':
+                                             'Missing shape info in GraphDef'})
+
             elif layer['type'][0] == 'Pooling':
                 if str(node.type) == 'MaxPool':
-                    layer['params']['pool'] = 0
+                    layer['params']['pool'] = 'MAX'
                     layer['params']['kernel_h'] = int(
                         node.get_attr('ksize')[1])
                     layer['params']['kernel_w'] = int(
@@ -202,7 +247,7 @@ def import_graph_def(request):
                                              'Missing shape info in GraphDef'})
 
                 if str(node.type) == 'AvgPool':
-                    layer['params']['pool'] = 1
+                    layer['params']['pool'] = 'AVE'
                     layer['params']['kernel_h'] = int(
                         node.get_attr('ksize')[1])
                     layer['params']['kernel_w'] = int(
@@ -259,6 +304,12 @@ def import_graph_def(request):
             elif layer['type'][0] == 'Softsign':
                 pass
 
+            elif layer['type'][0] == 'SELU':
+                pass
+
+            elif layer['type'][0] == 'TanH':
+                pass
+
             elif layer['type'][0] == 'Concat':
                 if 'axis' in node.node_def.attr:
                     layer['params']['axis'] = node.get_attr('axis')
@@ -312,8 +363,8 @@ def import_graph_def(request):
                     'phase': None
                 },
                 'connection': {
-                    'input': d[key]['input'],
-                    'output': d[key]['output']
+                    'input': list(set(d[key]['input'])),
+                    'output': list(set(d[key]['output']))
                 },
                 'params': d[key]['params']
             }

@@ -14,6 +14,7 @@ input_file = args.input_file
 output_file = args.output_file
 
 K.set_learning_phase(0)
+K.set_image_dim_ordering('th')
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(
@@ -29,5 +30,5 @@ json_str = json_str.strip("'<>() ").replace('\'', '\"')
 model = model_from_json(json_str)
 
 sess = K.get_session()
-tf.train.write_graph(sess.graph.as_graph_def(), output_fld,
+tf.train.write_graph(sess.graph.as_graph_def(add_shapes=True), output_fld,
                      output_file + '.pbtxt', as_text=True)

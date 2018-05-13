@@ -1031,6 +1031,13 @@ export default {
       trg: ['Top']
     },
     params: {
+      layer_type: { // Only Tensorflow
+        name: 'Type',
+        value: '2D',
+        type: 'select',
+        options: ['2D'],
+        required: false
+      },
       num_output: { // Maps to: filters(Keras)
         name: 'No of outputs',
         value: '',
@@ -1431,7 +1438,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -1577,7 +1584,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -1723,7 +1730,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -2200,7 +2207,7 @@ export default {
         name: 'Moving Mean Initializer',
         value: 'Zeros',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity',
         'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -2435,7 +2442,7 @@ export default {
     },
     learn: false
   },
-  ThresholdedReLU: { 
+  ThresholdedReLU: {
     name: 'Thresholded ReLU',
     color: '#009688',
     endpoint: {

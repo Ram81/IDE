@@ -224,7 +224,7 @@ class Content extends React.Component {
     const input = net[layerId].connection.input;
     const output = net[layerId].connection.output;
     const layerIdNum = parseInt(layerId.substring(1,layerId.length)); //numeric value of the layerId
-    const nextLayerId = this.state.nextLayerId - 1 == layerIdNum ? layerIdNum : this.state.nextLayerId; 
+    const nextLayerId = this.state.nextLayerId - 1 == layerIdNum ? layerIdNum : this.state.nextLayerId;
        //if last layer was deleted nextLayerId is replaced by deleted layer's id
     var totalParameters = this.state.totalParameters;
     let index;
@@ -287,13 +287,13 @@ class Content extends React.Component {
 
     if(filter_layers.includes(layer.info.type)) {
       // if layer is Conv or DeConv calculating total parameter of the layer using:
-      // N_Input * K_H * K_W * N_Output 
+      // N_Input * K_H * K_W * N_Output
       var kernel_params = 1;
-      if(layer.params['kernel_h'][0] != '')
+      if('kernel_h' in layer.params && layer.params['kernel_h'][0] != '')
         kernel_params *= layer.params['kernel_h'][0];
-      if(layer.params['kernel_w'][0] != '')
+      if('kernel_w' in layer.params && layer.params['kernel_w'][0] != '')
         kernel_params *= layer.params['kernel_w'][0];
-      if(layer.params['kernel_d'][0] != '')
+      if('kernel_d' in layer.params && layer.params['kernel_d'][0] != '')
         kernel_params *= layer.params['kernel_d'][0];
 
       weight_params = layer.shape['input'][0] * kernel_params * layer.params['num_output'][0];
@@ -326,7 +326,7 @@ class Content extends React.Component {
       if (layer.params['use_bias'][0] == false)
         bias_params = 0;
     }
-    
+
     // Update the total parameters of model after considering this layer.
     return (weight_params + bias_params);
   }
@@ -356,7 +356,7 @@ class Content extends React.Component {
         // call to intermediate method which will iterate over layers & calculate the parameters separately
         this.calculateParameters(net);
         // update the net object with shape attributes added
-        this.setState({ net });  
+        this.setState({ net });
       }.bind(this),
       error() {
         //console.log('error'+response.error);
@@ -366,15 +366,14 @@ class Content extends React.Component {
   exportPrep(callback) {
     this.dismissAllErrors();
     const error = [];
-    const netObj = JSON.parse(JSON.stringify(this.state.net));
-
-    if (Object.keys(netObj).length == 0) {
+    const net_Obj = JSON.parse(JSON.stringify(this.state.net));
+    if (Object.keys(net_Obj).length == 0) {
       this.addError("No model available for export");
       return;
     }
 
-    Object.keys(netObj).forEach(layerId => {
-      const layer = netObj[layerId];
+    Object.keys(net_Obj).forEach(layerId => {
+      const layer = net_Obj[layerId];
       Object.keys(layer.params).forEach(param => {
         layer.params[param] = layer.params[param][0];
         const paramData = data[layer.info.type].params[param];
@@ -389,7 +388,7 @@ class Content extends React.Component {
     if (error.length) {
       this.setState({ error });
     } else {
-      callback(netObj);
+      callback(net_Obj);
     }
   }
   exportNet(framework) {
@@ -850,7 +849,7 @@ class Content extends React.Component {
   infoModal() {
     this.modalHeader = "About"
     this.modalContent = `Fabrik is an online collaborative platform to build and visualize deep\
-                         learning models via a simple drag-and-drop interface. It allows researchers to\ 
+                         learning models via a simple drag-and-drop interface. It allows researchers to\
                          collaboratively develop and debug models using a web GUI that supports importing,\
                          editing and exporting networks written in widely popular frameworks like Caffe,\
                          Keras, and TensorFlow.`;
@@ -917,11 +916,11 @@ class Content extends React.Component {
     const id = event.target.id;
     const prev = net[`l${this.state.nextLayerId-1}`];
     const next = data[id];
-    const zoom = instance.getZoom();    
+    const zoom = instance.getZoom();
     const layer = {};
     let phase = this.state.selectedPhase;
-    
-    if (this.state.nextLayerId>0 //makes sure that there are other layers 
+
+    if (this.state.nextLayerId>0 //makes sure that there are other layers
       &&data[prev.info.type].endpoint.src == "Bottom" //makes sure that the source has a bottom
       &&next.endpoint.trg == "Top") { //makes sure that the target has a top
         layer.connection = { input: [], output: [] };
@@ -932,17 +931,17 @@ class Content extends React.Component {
         }
         layer.params = {
           'endPoint' : [next['endpoint'], false] //This key is endpoint in data.js, but endPoint in everywhere else.
-        }          
+        }
         Object.keys(next.params).forEach(j => {
           layer.params[j] = [next.params[j].value, false]; //copys all params from data.js
-        });    
+        });
         layer.props = JSON.parse(JSON.stringify(next.props)) //copys all props rom data.js
         layer.state = {
           top: `${(parseInt(prev.state.top.split('px')[0])/zoom + 80)}px`, // This makes the new layer is exactly 80px under the previous one.
           left: `${(parseInt(prev.state.left.split('px')[0])/zoom)}px`, // This aligns the new layer with the previous one.
-          class: '' 
+          class: ''
         }
-        layer.props.name = `${next.name}${this.state.nextLayerId}`;          
+        layer.props.name = `${next.name}${this.state.nextLayerId}`;
         prev.connection.output.push(`l${this.state.nextLayerId}`);
         layer.connection.input.push(`l${this.state.nextLayerId-1}`);
         this.addNewLayer(layer);
@@ -957,10 +956,10 @@ class Content extends React.Component {
           }
       layer.params = {
         'endPoint' : [next['endpoint'], false] //This key is endpoint in data.js, but endPoint in everywhere else.
-      }          
+      }
       Object.keys(next.params).forEach(j => {
         layer.params[j] = [next.params[j].value, false];  //copys all params from data.js
-      });    
+      });
       layer.props = JSON.parse(JSON.stringify(next.props)) //copys all props from data.js
       const height = Math.round(0.05*window.innerHeight, 0); // 5% of screen height, rounded to zero decimals
       const width = Math.round(0.35*window.innerWidth, 0); // 35% of screen width, rounded to zero decimals
@@ -969,10 +968,10 @@ class Content extends React.Component {
       layer.state = {
             top: `${top}px`,
             left: `${left}px`,
-            class: '' 
+            class: ''
           }
-      layer.props.name = `${next.name}${this.state.nextLayerId}`;          
-      this.addNewLayer(layer); 
+      layer.props.name = `${next.name}${this.state.nextLayerId}`;
+      this.addNewLayer(layer);
     }
   }
   render() {
@@ -1000,7 +999,7 @@ class Content extends React.Component {
               urlModal={this.urlModal}
              />
              <h5 className="sidebar-heading">INSERT LAYER</h5>
-             <Pane 
+             <Pane
              handleClick = {this.handleClick}
              setDraggingLayer = {this.setDraggingLayer}
              />
@@ -1014,12 +1013,12 @@ class Content extends React.Component {
           </div>
         </div>
       <div id="main">
-          <input type="text" 
+          <input type="text"
             className={$.isEmptyObject(this.state.net) ? "hidden": ""}
-            id="netName" 
-            placeholder="Net name" 
-            value={this.state.net_name} 
-            onChange={this.changeNetName} 
+            id="netName"
+            placeholder="Net name"
+            value={this.state.net_name}
+            onChange={this.changeNetName}
             spellCheck="false"
           />
           {loader}
