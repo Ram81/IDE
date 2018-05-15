@@ -63,13 +63,20 @@ def get_padding(node, layer):
     pad_left = pad_along_width / 2
     '''
 
-    pad_h = ((int(output_shape[1]) - 1) * layer['params']['stride_h'] +
-             layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
-    pad_w = ((int(output_shape[2]) - 1) * layer['params']['stride_w'] +
-             layer['params']['kernel_w'] - int(input_shape[2])) / float(2)
+    if node.type == "Conv2DBackpropInput":
+        # if deconvolution layer padding calculation logic changes
+        pad_h = ((int(input_shape[1]) - 1) * layer['params']['stride_h'] +
+                 layer['params']['kernel_h'] - int(output_shape[1])) / float(2)
+        pad_w = ((int(input_shape[2]) - 1) * layer['params']['stride_w'] +
+                 layer['params']['kernel_w'] - int(output_shape[2])) / float(2)
+    else:
+        pad_h = ((int(output_shape[1]) - 1) * layer['params']['stride_h'] +
+                 layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
+        pad_w = ((int(output_shape[2]) - 1) * layer['params']['stride_w'] +
+                 layer['params']['kernel_w'] - int(input_shape[2])) / float(2)
 
     # check this logic (see caffe-tensorflow/kaffe/shapes.py)
-    if node.type == "Conv2D":
+    if node.type == "Conv2D" or node.type == "Conv2DBackpropInput":
         pad_h = math.ceil(pad_h)
         pad_w = math.ceil(pad_w)
     elif node.type == "MaxPool" or node.type == "AvgPool":
