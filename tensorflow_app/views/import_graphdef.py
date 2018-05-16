@@ -231,7 +231,7 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '2D'
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'], \
-                        layer['params']['pad_type'] = get_padding(node, layer)
+                            layer['params']['pad_type'] = get_padding(node, layer)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
