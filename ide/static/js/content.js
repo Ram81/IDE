@@ -501,10 +501,6 @@ class Content extends React.Component {
     // this line will unmount all the layers
     // so that the new imported layers will all be mounted again
     const tempError = {};
-    // maintaining height & width in integers for use of map in order to
-    // reduce the search space for overlapping layers & plotting.
-    const height = Math.round(0.05*window.innerHeight, 0);
-    const width = Math.round(0.35*window.innerWidth, 0);
     // Initialize Python layer parameters to be empty
     data['Python']['params'] = {}
     this.setState({ net: {}, selectedLayer: null, hoveredLayer: null, nextLayerId: 0, selectedPhase: 0, error: [] });
@@ -542,80 +538,9 @@ class Content extends React.Component {
       }
     });
     // initialize the position of layers
-    let positions = tempError.length ? {} : netLayout(net);
-    // use map for maintaining top,left coordinates of layers
-    // in order to avoid overlapping layers
-    let map = {}
-    // Layers which are not used alone
-    let combined_layers = ['ReLU', 'PReLU', 'LRN', 'TanH', 'BatchNorm', 'Dropout', 'Scale'];
-    Object.keys(positions).forEach(layerId => {
-      const layer = net[layerId];
-      // Checking if the layer is one of the combined ones
-      // and deciding vertical spacing accordingly
-      var parentX = positions[layer.connection.input[0]];
-      var currentX = positions[layerId][0];
-      if (parentX){
-        parentX = parentX[0];
-      }
-      if ($.inArray(layer.info.type, combined_layers) != -1 && parentX==currentX){
-        var y_space = 0;
-      }
-      else {
-        y_space = 40;
-      }
-      var prev_top = 0;
-
-      // Finding the position of the last(deepest) connected layer
-      if (net[layer.connection.input[0]] != undefined){
-        prev_top = 0;
-        for (var i=0; i<layer.connection.input.length; i++){
-          var temp = net[layer.connection.input[i]].state.top;
-          temp = parseInt(temp.substring(0,temp.length-2));
-          if (temp > prev_top){
-            prev_top = temp;
-          }
-        }
-      }
-      // Graph does not centre properly on higher resolution screens
-      var top = height + prev_top + y_space + Math.ceil(41-height);
-      var left = width + 80 * positions[layerId][0];
-      var layerOverlaps = true;
-
-      // Checking for Overlapping layers based on their X-Coordinates
-      // if any layer overlaps then adjust the position else keep
-      // the preferred positions.
-      while (layerOverlaps) {
-        var overlapFlag = false;
-        // checking for overlapping layer div's by use of there height & width.
-        for(var topC = Math.max(0,top - 40);topC<(top+80);topC++) {
-          if(map.hasOwnProperty(topC)){
-            var xPositions = map[topC].slice();
-            for(var j=0;j<xPositions.length;j++) {
-              if(xPositions[j]>=(left-130) && xPositions[j]<=(left+260)) {
-                overlapFlag = true;
-                break;
-              }
-            }
-          }
-        }
-        if(!overlapFlag) {
-          layerOverlaps = false;
-          break;
-        }
-        top += y_space;
-      }
-
-      layer.state = {
-          top: `${top}px`,
-          left: `${left}px`,
-          class: ''
-      };
-      // keeping a map of layer's top,left coordinates.
-      if(!map.hasOwnProperty(top)) {
-        map[top]=[];
-      }
-      map[top].push(left);
-    });
+    if (tempError.length == undefined) {
+      netLayout(net);
+    }
 
     if (Object.keys(tempError).length) {
       const errorLayers = Object.keys(tempError).join(', ');
