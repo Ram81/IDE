@@ -14,7 +14,6 @@ input_file = args.input_file
 output_file = args.output_file
 
 K.set_learning_phase(0)
-K.set_image_dim_ordering('th')
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(

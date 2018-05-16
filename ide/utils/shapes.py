@@ -29,7 +29,24 @@ def filter(layer):
         num_out = layer['shape']['input'][0]
     else:
         num_out = layer['params']['num_output']
-    if (layer['info']['type'] in ['Deconvolution', 'DepthwiseConv']):
+    if (layer['info']['type'] == 'Deconvolution'):
+        _, i_h, i_w = layer['shape']['input']
+        k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
+        s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
+        p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
+
+        o_h = i_h * s_h
+        o_w = i_w * s_w
+        if ('pad_type' in layer['params'] and layer['params']['pad_type'] == 'VALID'):
+            # handling tensorflow deconv layer separately
+            o_h += max(k_h - s_h, 0)
+            o_w += max(k_w - s_w, 0)
+        elif ('pad_type' not in layer['params']):
+            o_h = int((i_h - 1)*s_h + k_h - 2*p_h)
+            o_w = int((i_w - 1)*s_w + k_w - 2*p_w)
+
+        return [num_out, o_h, o_w]
+    elif (layer['info']['type'] == 'DepthwiseConv'):
         _, i_h, i_w = layer['shape']['input']
         k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
         s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']

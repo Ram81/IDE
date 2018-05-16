@@ -1079,7 +1079,15 @@ export default {
         value: 0,
         type: 'number',
         required: false
-      },dilation_h: {
+      },
+      pad_type: {
+        name: 'Padding type',
+        value: 'SAME',
+        type: 'select',
+        options: ['SAME', 'VALID'],
+        required: false
+      },
+      dilation_h: {
         name: 'Dilation height',
         value: 1,
         type: 'number',

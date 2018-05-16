@@ -65,10 +65,13 @@ def get_padding(node, layer):
 
     if node.type == "Conv2DBackpropInput":
         # if deconvolution layer padding calculation logic changes
-        pad_h = ((int(input_shape[1]) - 1) * layer['params']['stride_h'] +
-                 layer['params']['kernel_h'] - int(output_shape[1])) / float(2)
-        pad_w = ((int(input_shape[2]) - 1) * layer['params']['stride_w'] +
-                 layer['params']['kernel_w'] - int(output_shape[2])) / float(2)
+        if ('padding' in node.node_def.attr):
+            pad_type = node.get_attr('padding')
+            pad_h = ((int(input_shape[1]) - 1) * layer['params']['stride_h'] +
+                     layer['params']['kernel_h'] - int(output_shape[1])) / float(2)
+            pad_w = ((int(input_shape[2]) - 1) * layer['params']['stride_w'] +
+                     layer['params']['kernel_w'] - int(output_shape[2])) / float(2)
+            return int(math.floor(pad_h)), int(math.floor(pad_w)), pad_type
     else:
         pad_h = ((int(output_shape[1]) - 1) * layer['params']['stride_h'] +
                  layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
@@ -227,8 +230,8 @@ def import_graph_def(request):
                         node.get_attr('strides')[2])
                     layer['params']['layer_type'] = '2D'
                     try:
-                        layer['params']['pad_h'], layer['params']['pad_w'] = \
-                            get_padding(node, layer)
+                        layer['params']['pad_h'], layer['params']['pad_w'], \
+                        layer['params']['pad_type'] = get_padding(node, layer)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
