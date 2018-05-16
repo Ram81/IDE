@@ -20,7 +20,7 @@ class UploadTest(unittest.TestCase):
 
     def test_tf_deconv_import(self):
         model_file = open(os.path.join(settings.BASE_DIR, 'example/tensorflow', 'denoiseAutoEncoder.pbtxt'),
-                           'r')
+                          'r')
         response = self.client.post(reverse('tf-import'), {'file': model_file})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
