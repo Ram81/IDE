@@ -38,13 +38,10 @@ def filter(layer):
 
         o_h = i_h * s_h
         o_w = i_w * s_w
-        if ('pad_type' in layer['params'] and layer['params']['pad_type'] == 'VALID'):
+        if ('padding' in layer['params'] and layer['params']['padding'] == 'VALID'):
             # handling tensorflow deconv layer separately
             o_h += max(k_h - s_h, 0)
             o_w += max(k_w - s_w, 0)
-        elif ('pad_type' not in layer['params']):
-            o_h = int((i_h - 1)*s_h + k_h - 2*p_h)
-            o_w = int((i_w - 1)*s_w + k_w - 2*p_w)
 
         return [num_out, o_h, o_w]
     elif (layer['info']['type'] == 'DepthwiseConv'):

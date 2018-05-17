@@ -1080,7 +1080,7 @@ export default {
         type: 'number',
         required: false
       },
-      pad_type: {
+      padding: {
         name: 'Padding type',
         value: 'SAME',
         type: 'select',
