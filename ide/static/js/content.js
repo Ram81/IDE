@@ -289,11 +289,11 @@ class Content extends React.Component {
       // if layer is Conv or DeConv calculating total parameter of the layer using:
       // N_Input * K_H * K_W * N_Output
       var kernel_params = 1;
-      if(layer.params['kernel_h'][0] != '')
+      if('kernel_h' in layer.params && layer.params['kernel_h'][0] != '')
         kernel_params *= layer.params['kernel_h'][0];
-      if(layer.params['kernel_w'][0] != '')
+      if('kernel_w' in layer.params && layer.params['kernel_w'][0] != '')
         kernel_params *= layer.params['kernel_w'][0];
-      if(layer.params['kernel_d'][0] != '')
+      if('kernel_d' in layer.params && layer.params['kernel_d'][0] != '')
         kernel_params *= layer.params['kernel_d'][0];
 
       weight_params = layer.shape['input'][0] * kernel_params * layer.params['num_output'][0];
@@ -366,15 +366,14 @@ class Content extends React.Component {
   exportPrep(callback) {
     this.dismissAllErrors();
     const error = [];
-    const netObj = JSON.parse(JSON.stringify(this.state.net));
-
-    if (Object.keys(netObj).length == 0) {
+    const net_Obj = JSON.parse(JSON.stringify(this.state.net));
+    if (Object.keys(net_Obj).length == 0) {
       this.addError("No model available for export");
       return;
     }
 
-    Object.keys(netObj).forEach(layerId => {
-      const layer = netObj[layerId];
+    Object.keys(net_Obj).forEach(layerId => {
+      const layer = net_Obj[layerId];
       Object.keys(layer.params).forEach(param => {
         layer.params[param] = layer.params[param][0];
         const paramData = data[layer.info.type].params[param];
@@ -389,7 +388,7 @@ class Content extends React.Component {
     if (error.length) {
       this.setState({ error });
     } else {
-      callback(netObj);
+      callback(net_Obj);
     }
   }
   exportNet(framework) {
