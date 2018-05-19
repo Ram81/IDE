@@ -366,14 +366,14 @@ class Content extends React.Component {
   exportPrep(callback) {
     this.dismissAllErrors();
     const error = [];
-    const net_Obj = JSON.parse(JSON.stringify(this.state.net));
-    if (Object.keys(net_Obj).length == 0) {
+    const netObj = JSON.parse(JSON.stringify(this.state.net));
+    if (Object.keys(netObj).length == 0) {
       this.addError("No model available for export");
       return;
     }
 
-    Object.keys(net_Obj).forEach(layerId => {
-      const layer = net_Obj[layerId];
+    Object.keys(netObj).forEach(layerId => {
+      const layer = netObj[layerId];
       Object.keys(layer.params).forEach(param => {
         layer.params[param] = layer.params[param][0];
         const paramData = data[layer.info.type].params[param];
@@ -388,7 +388,7 @@ class Content extends React.Component {
     if (error.length) {
       this.setState({ error });
     } else {
-      callback(net_Obj);
+      callback(netObj);
     }
   }
   exportNet(framework) {
