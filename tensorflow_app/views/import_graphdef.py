@@ -56,10 +56,10 @@ def get_padding(node, layer):
     pad_left = pad_along_width / 2
     '''
     if node.type == "Conv3D":
-        pad_d = ((int(output_shape[1]) - 1) * layer['params']['stride_h'] +
-                 layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
-        pad_h = ((int(output_shape[2]) - 1) * layer['params']['stride_w'] +
-                 layer['params']['kernel_w'] - int(input_shape[2])) / float(2)
+        pad_d = ((int(output_shape[1]) - 1) * layer['params']['stride_d'] +
+                 layer['params']['kernel_d'] - int(input_shape[1])) / float(2)
+        pad_h = ((int(output_shape[2]) - 1) * layer['params']['stride_h'] +
+                 layer['params']['kernel_h'] - int(input_shape[2])) / float(2)
         pad_w = ((int(output_shape[3]) - 1) * layer['params']['stride_w'] +
                  layer['params']['kernel_w'] - int(input_shape[3])) / float(2)
 
@@ -211,12 +211,12 @@ def import_graph_def(request):
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
                 elif str(node.type) == 'Conv3D':
+                    layer['params']['stride_d'] = int(
+                        node.get_attr('strides')[1])
                     layer['params']['stride_h'] = int(
                         node.get_attr('strides')[2])
                     layer['params']['stride_w'] = int(
                         node.get_attr('strides')[3])
-                    layer['params']['stride_d'] = int(
-                        node.get_attr('strides')[1])
                     layer['params']['layer_type'] = '3D'
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'],\
