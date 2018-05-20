@@ -233,6 +233,7 @@ def import_graph_def(request):
                                              'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'Pooling':
+                layer['params']['padding'] = str(node.get_attr('padding'))
                 if str(node.type) == 'MaxPool':
                     layer['params']['pool'] = 'MAX'
                     layer['params']['kernel_h'] = int(
@@ -244,7 +245,6 @@ def import_graph_def(request):
                     layer['params']['stride_w'] = int(
                         node.get_attr('strides')[2])
                     layer['params']['layer_type'] = '2D'
-                    layer['params']['padding'] = node.get_attr('padding')
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'] = \
                             get_padding(node, layer)
@@ -285,7 +285,6 @@ def import_graph_def(request):
                     layer['params']['stride_w'] = int(
                         node.get_attr('strides')[2])
                     layer['params']['layer_type'] = '2D'
-                    layer['params']['padding'] = node.get_attr('padding')
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'] = \
                             get_padding(node, layer)
