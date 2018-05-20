@@ -507,6 +507,9 @@ class Content extends React.Component {
     Object.keys(net).forEach(layerId => {
       var layer = net[layerId];
       const type = layer.info.type;
+      // extract unique input & output nodes
+      net[layerId]['connection']['input'] = net[layerId]['connection']['input'].filter((val,id,array) => array.indexOf(val) == id);
+      net[layerId]['connection']['output'] = net[layerId]['connection']['output'].filter((val,id,array) => array.indexOf(val) == id);
       // const index = +layerId.substring(1);
       if (type == 'Python'){
         Object.keys(layer.params).forEach(param => {
