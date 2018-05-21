@@ -30,6 +30,17 @@ class ConvLayerTest(unittest.TestCase):
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
 
+class RepeatLayerTest(unittest.TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_tf_import(self):
+        model_file = open(os.path.join(settings.BASE_DIR, 'example/tensorflow', 'Conv2DRepeat.pbtxt'),
+                          'r')
+        response = self.client.post(reverse('tf-import'), {'file': model_file})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
+
 
 class PoolLayerTest(unittest.TestCase):
     def setUp(self):
