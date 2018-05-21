@@ -23,7 +23,7 @@ def get_layer_name(node_name):
     i = node_name.find('/')
     if i == -1:
         name = str(node_name)
-    elif str(node_name[:i]) == 'Repeat':
+    elif str(node_name[:i]) in ['Repeat', 'Stack']:
         name = str(node_name.split('/')[1])
     else:
         name = str(node_name[:i])
@@ -188,8 +188,10 @@ def import_graph_def(request):
                 layer['params']['dim'] = str(input_dim)[1:-1]
 
             elif layer['type'][0] == 'Convolution':
-                if str(node.name) in [name + '/weights', 'Repeat/' + name + '/weights', \
-                                        name + '/kernel', 'Repeat/' + name + '/kernel']:
+                if str(node.name) in [name + '/weights', 'Repeat/' + name + '/weights',
+                                      name + '/kernel', 'Repeat/' + name + '/kernel',
+                                      name + '/weights', 'Stack/' + name + '/weights',
+                                      name + '/kernel', 'Stack/' + name + '/kernel']:
                     # since conv takes weights as input, this node will be processed first
                     # acquired parameters are then required in get_padding function
                     if len(node.get_attr('shape').dim) == 4:
