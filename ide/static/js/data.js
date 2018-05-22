@@ -1178,7 +1178,7 @@ export default {
       trg: ['Top']
     },
     params: {
-      filters: {
+      num_output: {
         name: 'No of outputs',
         value: '',
         type: 'number',
@@ -1220,7 +1220,14 @@ export default {
         type: 'number',
         required: false
       },
-      depth_mult: {
+      padding: {
+        name: 'Padding Type',
+        value: 'SAME',
+        type: 'select',
+        options: ['SAME', 'VALID'],
+        required: false
+      },
+      depth_multiplier: {
         name: 'Depth multiplier',
         value: 1,
         type: 'number',

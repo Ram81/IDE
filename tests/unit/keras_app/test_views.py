@@ -9,7 +9,8 @@ from django.test import Client
 from keras.layers import Dense, Activation, Dropout, Flatten
 from keras.layers import Reshape, Permute, RepeatVector
 from keras.layers import ActivityRegularization, Masking
-from keras.layers import Conv1D, Conv2D, Conv3D, Conv2DTranspose
+from keras.layers import Conv1D, Conv2D, Conv3D, Conv2DTranspose, \
+    SeparableConv2D
 from keras.layers import UpSampling1D, UpSampling2D, UpSampling3D
 from keras.layers import GlobalMaxPooling1D, GlobalMaxPooling2D
 from keras.layers import MaxPooling1D, MaxPooling2D, MaxPooling3D
@@ -396,7 +397,7 @@ class ConvolutionImportTest(unittest.TestCase, HelperFunctions):
 
 
 # This is currently unavailable with Theano backend
-'''
+
 class DepthwiseConvolutionImportTest(unittest.TestCase, HelperFunctions):
     def setUp(self):
         self.client = Client()
@@ -407,8 +408,8 @@ class DepthwiseConvolutionImportTest(unittest.TestCase, HelperFunctions):
                                   bias_regularizer=regularizers.l2(0.01),
                                   activity_regularizer=regularizers.l2(0.01), depthwise_constraint='max_norm',
                                   bias_constraint='max_norm', pointwise_constraint='max_norm',
-                                  activation='relu', input_shape=(1, 16, 16)))
-        self.keras_param_test(model, 1, 12)'''
+                                  activation='relu', input_shape=(16, 16, 1)))
+        self.keras_param_test(model, 1, 12)
 
 
 class DeconvolutionImportTest(unittest.TestCase, HelperFunctions):
