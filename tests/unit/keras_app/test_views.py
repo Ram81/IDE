@@ -396,11 +396,10 @@ class ConvolutionImportTest(unittest.TestCase, HelperFunctions):
         self.keras_param_test(model, 1, 17)
 
 
-# This is currently unavailable with Theano backend
-
 class DepthwiseConvolutionImportTest(unittest.TestCase, HelperFunctions):
     def setUp(self):
         self.client = Client()
+
     def test_keras_import(self):
         model = Sequential()
         model.add(SeparableConv2D(32, 3, depthwise_regularizer=regularizers.l2(0.01),

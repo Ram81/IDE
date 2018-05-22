@@ -1171,7 +1171,7 @@ export default {
     learn: true
   },
   DepthwiseConv: { // Only Keras
-    name: 'depthwise convolution',
+    name: 'depth conv',
     color: '#3f51b5',
     endpoint: {
       src: ['Bottom'],
