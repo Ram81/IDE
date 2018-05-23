@@ -434,8 +434,8 @@ def import_graph_def(request):
                     'phase': None
                 },
                 'connection': {
-                    'input': list(set(d[key]['input'])),
-                    'output': list(set(d[key]['output']))
+                    'input': d[key]['input'],
+                    'output': d[key]['output']
                 },
                 'params': d[key]['params']
             }
