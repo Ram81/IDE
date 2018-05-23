@@ -731,6 +731,13 @@ export default {
         type: 'number',
         required: false
       },
+      padding: {
+        name: 'Padding Type',
+        value: 'SAME',
+        type: 'select',
+        options: ['SAME', 'VALID'],
+        required: false
+      },
       kernel_h: {
         name: 'Kernel height',
         value: '',

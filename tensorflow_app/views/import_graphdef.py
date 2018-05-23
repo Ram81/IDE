@@ -9,7 +9,8 @@ import urllib2
 from urlparse import urlparse
 
 # map from operation name(tensorflow) to layer name(caffe)
-op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'MaxPool': 'Pooling',
+op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Convolution',
+                'MaxPool': 'Pooling', 'MaxPool3D': 'Pooling', 'AvgPool3D': 'Pooling',
                 'MatMul': 'InnerProduct', 'LRN': 'LRN', 'Concat': 'Concat',
                 'AvgPool': 'Pooling', 'Reshape': 'Flatten', 'Conv2DBackpropInput': 'Deconvolution'}
 
@@ -63,30 +64,47 @@ def get_padding(node, layer):
     pad_left = pad_along_width / 2
     '''
 
-    if node.type == "Conv2DBackpropInput":
+    if node.type in ["Conv3D", "MaxPool3D", "AvgPool3D"]:
+        pad_d = ((int(output_shape[1]) - 1) * layer['params']['stride_d'] +
+                 layer['params']['kernel_d'] - int(input_shape[1])) / float(2)
+        pad_h = ((int(output_shape[2]) - 1) * layer['params']['stride_h'] +
+                 layer['params']['kernel_h'] - int(input_shape[2])) / float(2)
+        pad_w = ((int(output_shape[3]) - 1) * layer['params']['stride_w'] +
+                 layer['params']['kernel_w'] - int(input_shape[3])) / float(2)
+
+        if node.type == "Conv3D":
+            pad_d = math.ceil(pad_d)
+            pad_h = math.ceil(pad_h)
+            pad_w = math.ceil(pad_w)
+        elif node.type in ["MaxPool3D", "AvgPool3D"]:
+            pad_d = math.floor(pad_d)
+            pad_h = math.floor(pad_h)
+            pad_w = math.floor(pad_w)
+
+        return int(pad_d), int(pad_h), int(pad_w)
+    elif node.type == "Conv2DBackpropInput":
         # if deconvolution layer padding calculation logic changes
         if ('padding' in node.node_def.attr):
-            pad_type = node.get_attr('padding')
             pad_h = ((int(input_shape[1]) - 1) * layer['params']['stride_h'] +
                      layer['params']['kernel_h'] - int(output_shape[1])) / float(2)
             pad_w = ((int(input_shape[2]) - 1) * layer['params']['stride_w'] +
                      layer['params']['kernel_w'] - int(output_shape[2])) / float(2)
-            return int(math.floor(pad_h)), int(math.floor(pad_w)), pad_type
+            return int(math.floor(pad_h)), int(math.floor(pad_w))
     else:
         pad_h = ((int(output_shape[1]) - 1) * layer['params']['stride_h'] +
                  layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
         pad_w = ((int(output_shape[2]) - 1) * layer['params']['stride_w'] +
                  layer['params']['kernel_w'] - int(input_shape[2])) / float(2)
 
-    # check this logic (see caffe-tensorflow/kaffe/shapes.py)
-    if node.type == "Conv2D" or node.type == "Conv2DBackpropInput":
-        pad_h = math.ceil(pad_h)
-        pad_w = math.ceil(pad_w)
-    elif node.type == "MaxPool" or node.type == "AvgPool":
-        pad_h = math.floor(pad_h)
-        pad_w = math.floor(pad_w)
+        # check this logic (see caffe-tensorflow/kaffe/shapes.py)
+        if node.type == "Conv2D":
+            pad_h = math.ceil(pad_h)
+            pad_w = math.ceil(pad_w)
+        elif node.type in ["MaxPool", "AvgPool"]:
+            pad_h = math.floor(pad_h)
+            pad_w = math.floor(pad_w)
 
-    return int(pad_h), int(pad_w)
+        return int(pad_h), int(pad_w)
 
 
 @csrf_exempt
@@ -176,22 +194,37 @@ def import_graph_def(request):
             layer = d[name]
 
             if layer['type'][0] == 'Input':
-                # NHWC data format
-                dim = node.get_attr('shape').dim
-                layer['params']['dim'] = str(map(int, [dim[i].size if dim[i].size != -1 else 1
-                                                 for i in [0, 3, 1, 2]]))[1:-1]
+                input_dim = [int(dim.size) for dim in node.get_attr('shape').dim]
+                # Swapping channel value to convert NCHW/NCDHW format
+                if input_dim[0] == -1:
+                    input_dim[0] = 1
+                temp = input_dim[1]
+                input_dim[1] = input_dim[len(input_dim) - 1]
+                input_dim[len(input_dim) - 1] = temp
+
+                layer['params']['dim'] = str(input_dim)[1:-1]
 
             elif layer['type'][0] == 'Convolution':
                 if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
                     # since conv takes weights as input, this node will be processed first
                     # acquired parameters are then required in get_padding function
-                    layer['params']['kernel_h'] = int(
-                        node.get_attr('shape').dim[0].size)
-                    layer['params']['kernel_w'] = int(
-                        node.get_attr('shape').dim[1].size)
-                    layer['params']['num_output'] = int(
-                        node.get_attr('shape').dim[3].size)
-                if str(node.type) == 'Conv2D':
+                    if len(node.get_attr('shape').dim) == 4:
+                        layer['params']['kernel_h'] = int(
+                            node.get_attr('shape').dim[0].size)
+                        layer['params']['kernel_w'] = int(
+                            node.get_attr('shape').dim[1].size)
+                        layer['params']['num_output'] = int(
+                            node.get_attr('shape').dim[3].size)
+                    elif len(node.get_attr('shape').dim) == 5:
+                        layer['params']['kernel_d'] = int(
+                            node.get_attr('shape').dim[0].size)
+                        layer['params']['kernel_h'] = int(
+                            node.get_attr('shape').dim[1].size)
+                        layer['params']['kernel_w'] = int(
+                            node.get_attr('shape').dim[2].size)
+                        layer['params']['num_output'] = int(
+                            node.get_attr('shape').dim[4].size)
+                if node.type == 'Conv2D':
                     layer['params']['stride_h'] = int(
                         node.get_attr('strides')[1])
                     layer['params']['stride_w'] = int(
@@ -200,6 +233,20 @@ def import_graph_def(request):
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'] = \
                             get_padding(node, layer)
+                    except TypeError:
+                        return JsonResponse({'result': 'error', 'error':
+                                             'Missing shape info in GraphDef'})
+                elif node.type == 'Conv3D':
+                    layer['params']['stride_d'] = int(
+                        node.get_attr('strides')[1])
+                    layer['params']['stride_h'] = int(
+                        node.get_attr('strides')[2])
+                    layer['params']['stride_w'] = int(
+                        node.get_attr('strides')[3])
+                    layer['params']['layer_type'] = '3D'
+                    try:
+                        layer['params']['pad_h'], layer['params']['pad_w'],\
+                            layer['params']['pad_d'] = get_padding(node, layer)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
@@ -229,16 +276,49 @@ def import_graph_def(request):
                     layer['params']['stride_w'] = int(
                         node.get_attr('strides')[2])
                     layer['params']['layer_type'] = '2D'
+                    layer['params']['layer_type'] = node.get_attr('padding')
                     try:
-                        layer['params']['pad_h'], layer['params']['pad_w'], \
-                            layer['params']['padding'] = get_padding(node, layer)
+                        layer['params']['pad_h'], layer['params']['pad_w'] = get_padding(node, layer)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'Pooling':
-                if str(node.type) == 'MaxPool':
-                    layer['params']['pool'] = 'MAX'
+                layer['params']['padding'] = str(node.get_attr('padding'))
+                if '3D' in node.type:
+                    # checking type of pooling layer
+                    if node.type == 'MaxPool3D':
+                        layer['params']['pool'] = 'MAX'
+                    elif node.type == 'AvgPool3D':
+                        layer['params']['pool'] = 'AVE'
+
+                    layer['params']['kernel_d'] = int(
+                        node.get_attr('ksize')[1])
+                    layer['params']['kernel_h'] = int(
+                        node.get_attr('ksize')[2])
+                    layer['params']['kernel_w'] = int(
+                        node.get_attr('ksize')[3])
+                    layer['params']['stride_d'] = int(
+                        node.get_attr('strides')[1])
+                    layer['params']['stride_h'] = int(
+                        node.get_attr('strides')[2])
+                    layer['params']['stride_w'] = int(
+                        node.get_attr('strides')[3])
+                    layer['params']['layer_type'] = '3D'
+                    try:
+                        layer['params']['pad_d'], layer['params']['pad_h'], \
+                            layer['params']['pad_w'] = get_padding(node, layer)
+                    except TypeError:
+                        return JsonResponse({'result': 'error', 'error':
+                                             'Missing shape info in GraphDef'})
+
+                else:
+                    # checking type of pooling layer
+                    if node.type == 'MaxPool':
+                        layer['params']['pool'] = 'MAX'
+                    elif node.type == 'AvgPool':
+                        layer['params']['pool'] = 'AVE'
+
                     layer['params']['kernel_h'] = int(
                         node.get_attr('ksize')[1])
                     layer['params']['kernel_w'] = int(
@@ -254,24 +334,6 @@ def import_graph_def(request):
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
-
-                if str(node.type) == 'AvgPool':
-                    layer['params']['pool'] = 'AVE'
-                    layer['params']['kernel_h'] = int(
-                        node.get_attr('ksize')[1])
-                    layer['params']['kernel_w'] = int(
-                        node.get_attr('ksize')[2])
-                    layer['params']['stride_h'] = int(
-                        node.get_attr('strides')[1])
-                    layer['params']['stride_w'] = int(
-                        node.get_attr('strides')[2])
-                    layer['params']['layer_type'] = '2D'
-                    try:
-                        layer['params']['pad_h'], layer['params']['pad_w'] = \
-                            get_padding(node, layer)
-                    except TypeError:
-                        return JsonResponse({'result': 'error',
-                                             'error': 'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'InnerProduct':
                 if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
