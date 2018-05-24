@@ -11,10 +11,11 @@ from urlparse import urlparse
 # map from operation name(tensorflow) to layer name(caffe)
 op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Convolution',
                 'MaxPool': 'Pooling', 'MaxPool3D': 'Pooling', 'AvgPool3D': 'Pooling',
-                'DepthwiseConv2dNative': 'DepthwiseConv', 'MatMul': 'InnerProduct', 'Relu': 'ReLU',
-                'FusedBatchNorm': 'BatchNorm', 'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
+                'DepthwiseConv2dNative': 'DepthwiseConv', 'MatMul': 'InnerProduct',
+                'Prod': 'InnerProduct', 'Relu': 'ReLU', 'Softplus': 'Softplus',
+                'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
                 'AvgPool': 'Pooling', 'Reshape': 'Flatten', 'LeakyRelu': 'ReLU',
-                'Elu': 'ELU', 'Softsign': 'Softsign', 'Softplus': 'Softplus'}
+                'Elu': 'ELU', 'Softsign': 'Softsign'}
 
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise'}
@@ -192,10 +193,9 @@ def import_graph_def(request):
                 layer['params']['dim'] = str(input_dim)[1:-1]
 
             elif layer['type'][0] == 'Convolution':
-                if str(node.name) in [name + '/weights', 'Repeat/' + name + '/weights',
-                                      name + '/kernel', 'Repeat/' + name + '/kernel',
-                                      name + '/weights', 'Stack/' + name + '/weights',
-                                      name + '/kernel', 'Stack/' + name + '/kernel']:
+                if str(node.name) in [name + '/weights', name + '/kernel',
+                                      'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
+                                      'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
                     # since conv takes weights as input, this node will be processed first
                     # acquired parameters are then required in get_padding function
                     if len(node.get_attr('shape').dim) == 4:
@@ -246,7 +246,11 @@ def import_graph_def(request):
                     pass
                 else:
                     # extract kernel_h, kernel_w, depth_mult of layer
-                    if str(node.name) in [name + '/depthwise_weights', name + '/depthwise_kernel']:
+                    if str(node.name) in [name + '/depthwise_weights', name + '/depthwise_kernel',
+                                          'Repeat/' + name + '/depthwise_weights',
+                                          'Repeat/' + name + '/depthwise_kernel',
+                                          'Stack/' + name + '/depthwise_weights',
+                                          'Stack/' + name + '/depthwise_kernel']:
                         layer['params']['kernel_h'] = int(
                             node.get_attr('shape').dim[0].size)
                         layer['params']['kernel_w'] = int(
@@ -339,7 +343,9 @@ def import_graph_def(request):
                                              'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'InnerProduct':
-                if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
+                if str(node.name) in [name + '/weights', name + '/kernel',
+                                      'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
+                                      'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
                     layer['params']['num_output'] = int(
                         node.get_attr('shape').dim[1].size)
 
@@ -351,7 +357,9 @@ def import_graph_def(request):
                     except:
                         pass
 
-                if str(node.name) == name + '/AssignMovingAvg/decay':
+                if str(node.name) in [name + '/AssignMovingAvg/decay',
+                                      'Repeat/' + name + '/AssignMovingAvg/decay',
+                                      'Stack/' + name + '/AssignMovingAvg/decay']:
                     layer['params']['moving_average_fraction'] = node.get_attr(
                         'value').float_val[0]
 
