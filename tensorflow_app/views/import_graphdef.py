@@ -193,6 +193,9 @@ def import_graph_def(request):
                 layer['params']['dim'] = str(input_dim)[1:-1]
 
             elif layer['type'][0] == 'Convolution':
+                # searching for weights and kernel ops to extract kernel_h,
+                # kernl_w, num_outputs of conv layer also considering repeat & stack layer
+                # as prefixes
                 if str(node.name) in [name + '/weights', name + '/kernel',
                                       'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
                                       'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
@@ -245,7 +248,9 @@ def import_graph_def(request):
                 if '3D' in node.type:
                     pass
                 else:
-                    # extract kernel_h, kernel_w, depth_mult of layer
+                    # searching for depthwise_weights and depthwise_kernel ops to extract kernel_h,
+                    # kernl_w, num_outputs of deconv layer also considering repeat & stack layer
+                    # as prefixes
                     if str(node.name) in [name + '/depthwise_weights', name + '/depthwise_kernel',
                                           'Repeat/' + name + '/depthwise_weights',
                                           'Repeat/' + name + '/depthwise_kernel',
@@ -343,6 +348,9 @@ def import_graph_def(request):
                                              'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'InnerProduct':
+                # searching for weights and kernel ops to extract num_outputs
+                # of IneerProduct layer also considering repeat & stack layer
+                # as prefixes
                 if str(node.name) in [name + '/weights', name + '/kernel',
                                       'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
                                       'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
@@ -356,7 +364,9 @@ def import_graph_def(request):
                             'value').float_val[0]
                     except:
                         pass
-
+                # searching for AssignMovingAvg/decay ops to extract moving
+                # average fraction of batchnorm layer also considering repeat & stack layer
+                # as prefixes
                 if str(node.name) in [name + '/AssignMovingAvg/decay',
                                       'Repeat/' + name + '/AssignMovingAvg/decay',
                                       'Stack/' + name + '/AssignMovingAvg/decay']:

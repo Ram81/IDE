@@ -87,7 +87,7 @@ def dense(layer, layer_in, layerId, tensor=True):
 def activation(layer, layer_in, layerId, tensor=True):
     out = {}
     if (layer['info']['type'] == 'ReLU'):
-        if (layer['params']['negative_slope'] != 0):
+        if ('negative_slope' in layer['params'] and layer['params']['negative_slope'] != 0):
             out[layerId] = LeakyReLU(alpha=layer['params']['negative_slope'])
         else:
             out[layerId] = Activation('relu')
