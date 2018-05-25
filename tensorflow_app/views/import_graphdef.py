@@ -15,7 +15,7 @@ op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Conv
                 'Prod': 'InnerProduct', 'Relu': 'ReLU', 'Softplus': 'Softplus',
                 'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
                 'AvgPool': 'Pooling', 'Reshape': 'Flatten', 'LeakyRelu': 'ReLU',
-                'Elu': 'ELU', 'Softsign': 'Softsign'}
+                'Elu': 'ELU', 'Softsign': 'Softsign', 'FusedBatchNorm': 'BatchNorm'}
 
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise'}
@@ -145,6 +145,8 @@ def import_graph_def(request):
                 d[name] = {'type': [], 'input': [], 'output': [], 'params': {}}
                 order.append(name)
             if node.type in op_layer_map:
+                if (node.type == "FusedBatchNorm"):
+                    d[name]['type'] = []
                 d[name]['type'].append(op_layer_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
                 layer_type = get_layer_type(node.name)
@@ -364,6 +366,15 @@ def import_graph_def(request):
                             'value').float_val[0]
                     except:
                         pass
+
+                if (node.type == 'FusedBatchNorm'):
+                    layer['params']['eps'] = float(node.get_attr(
+                        'epsilon'))
+                # searching for moving_mean/Initializer ops to extract moving
+                # mean initializer of batchnorm layer
+                if name + '/moving_mean/Initializer' in str(node.name):
+                    layer['params']['moving_mean_initializer'] = \
+                        initializer_map[str(node.name).split('/')[3]]
                 # searching for AssignMovingAvg/decay ops to extract moving
                 # average fraction of batchnorm layer also considering repeat & stack layer
                 # as prefixes
