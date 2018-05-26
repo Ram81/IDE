@@ -11,7 +11,7 @@ from urlparse import urlparse
 # map from operation name(tensorflow) to layer name(caffe)
 op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Convolution',
                 'MaxPool': 'Pooling', 'MaxPool3D': 'Pooling', 'AvgPool3D': 'Pooling',
-                'MatMul': 'InnerProduct', 'Relu': 'ReLU',
+                'MatMul': 'InnerProduct', 'Reshape': 'Flatten', 'Relu': 'ReLU',
                 'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
                 'AvgPool': 'Pooling', 'LeakyRelu': 'ReLU',
                 'Elu': 'ELU', 'Softsign': 'Softsign', 'Softplus': 'Softplus'}
@@ -212,7 +212,7 @@ def import_graph_def(request):
                 for outputId in layer['output']:
                     if (d[outputId]['type'][0] in ['LSTM', 'RNN', 'GRU']):
                         rnn_input_flag = True
-                if (rnn_input_flag == False):
+                if (not rnn_input_flag):
                     temp = input_dim[1]
                     input_dim[1] = input_dim[len(input_dim) - 1]
                     input_dim[len(input_dim) - 1] = temp

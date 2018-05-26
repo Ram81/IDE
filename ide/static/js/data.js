@@ -1813,6 +1813,13 @@ export default {
         type: 'checkbox',
         required: false
       },
+      activation: { // Only Keras
+        name: 'Activation',
+        value: 'None',
+        type: 'select',
+        options: ['softmax', 'elu', 'selu', 'softplus', 'softsign', 'relu', 'tanh', 'sigmoid', 'hard_sigmoid', 'linear'],
+        required: false
+      },
       caffe: {
         name: 'Available Caffe',
         value: true,
