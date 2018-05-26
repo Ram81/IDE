@@ -13,7 +13,7 @@ op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Conv
                 'MaxPool': 'Pooling', 'MaxPool3D': 'Pooling', 'AvgPool3D': 'Pooling',
                 'MatMul': 'InnerProduct', 'Relu': 'ReLU',
                 'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
-                'AvgPool': 'Pooling', 'Reshape': 'Flatten', 'LeakyRelu': 'ReLU',
+                'AvgPool': 'Pooling', 'LeakyRelu': 'ReLU',
                 'Elu': 'ELU', 'Softsign': 'Softsign', 'Softplus': 'Softplus'}
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise',
@@ -40,8 +40,6 @@ def get_layer_name(node_name):
     i = node_name.find('/')
     if i == -1:
         name = str(node_name)
-    elif check_rnn(node_name):
-        name = str(node_name).split('/')[1]
     else:
         name = str(node_name[:i])
     return name
@@ -152,8 +150,7 @@ def import_graph_def(request):
         graph = tf.get_default_graph()
 
         # to hold name of most recent rnn layer
-        prev_rnn_layer = None
-        rnn_map = {}
+        rnn_input_flag = False
 
         for node in graph.get_operations():
             name = get_layer_name(node.name)
@@ -161,27 +158,23 @@ def import_graph_def(request):
             if node.type == 'NoOp':
                 continue
             # separate case for a rnn layer
-            if layer_type == 'rnn':
-                if re.match('.*CellZeroState.*', name):
-                    layer_type = name.split('ZeroState')[0]
-                    prev_rnn_layer = name
-                else:
-                    if prev_rnn_layer is not None:
-                        rnn_map[name] = prev_rnn_layer
-                        name = prev_rnn_layer
             if name not in d:
                 d[name] = {'type': [], 'input': [], 'output': [], 'params': {}}
                 order.append(name)
             if node.type in op_layer_map:
                 d[name]['type'].append(op_layer_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
+                if layer_type == 'rnn':
+                    node_name = str(node.name).split('/')
+                    if re.match('.*CellZeroState.*', node_name[1]):
+                        layer_type = node_name[1].split('ZeroState')[0]
+                        # reset layer type of rnn layer to remove basic ops
+                        d[name]['type'] = []
                 if layer_type in name_map:
                     if name_map[layer_type] not in d[name]['type']:
                         d[name]['type'].append(name_map[layer_type])
             for input_tensor in node.inputs:
                 input_layer_name = get_layer_name(input_tensor.op.name)
-                if input_layer_name in rnn_map:
-                    input_layer_name = rnn_map[input_layer_name]
                 if input_layer_name != name:
                     d[name]['input'].append(input_layer_name)
                     if name not in d[input_layer_name]['output']:
@@ -209,20 +202,20 @@ def import_graph_def(request):
             if node.type == 'NoOp':
                 continue
             name = get_layer_name(node.name)
-            if name in rnn_map:
-                name = rnn_map[name]
             layer = d[name]
             # to avoid exceptions in case layer has unknown type
-            if len(layer['type']) == 0:
-                continue
             if layer['type'][0] == 'Input':
                 input_dim = [int(dim.size) for dim in node.get_attr('shape').dim]
                 # Swapping channel value to convert NCHW/NCDHW format
                 if input_dim[0] == -1:
                     input_dim[0] = 1
-                temp = input_dim[1]
-                input_dim[1] = input_dim[len(input_dim) - 1]
-                input_dim[len(input_dim) - 1] = temp
+                for outputId in layer['output']:
+                    if (d[outputId]['type'][0] in ['LSTM', 'RNN', 'GRU']):
+                        rnn_input_flag = True
+                if (rnn_input_flag == False):
+                    temp = input_dim[1]
+                    input_dim[1] = input_dim[len(input_dim) - 1]
+                    input_dim[len(input_dim) - 1] = temp
 
                 layer['params']['dim'] = str(input_dim)[1:-1]
 
@@ -413,6 +406,7 @@ def import_graph_def(request):
                     activation = str(node.name).split('/')
                     if len(activation) == 4 and activation[3] in activation_map:
                         layer['params']['recurrent_activation'] = activation_map[activation[3]]
+                layer['params']['return_sequences'] = True
 
             elif layer['type'][0] == 'RNN':
                 if re.match('.*'+name+'/Const', str(node.name)):
@@ -427,6 +421,7 @@ def import_graph_def(request):
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
                     layer['params']['bias_filler'] = intializer_map[b_filler]
+                layer['params']['return_sequences'] = True
 
             elif layer['type'][0] == 'GRU':
                 if re.match('.*'+name+'/Const', str(node.name)):
@@ -445,6 +440,7 @@ def import_graph_def(request):
                     activation = str(node.name).split('/')
                     if len(activation) == 4 and activation[3] in activation_map:
                         layer['params']['recurrent_activation'] = activation_map[activation[3]]
+                layer['params']['return_sequences'] = True
         net = {}
         batch_norms = []
         for key in d.keys():
