@@ -11,18 +11,20 @@ from urlparse import urlparse
 # map from operation name(tensorflow) to layer name(caffe)
 op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Convolution',
                 'MaxPool': 'Pooling', 'MaxPool3D': 'Pooling', 'AvgPool3D': 'Pooling',
-                'MatMul': 'InnerProduct', 'Reshape': 'Flatten', 'Relu': 'ReLU',
-                'Softmax': 'Softmax', 'LRN': 'LRN', 'Concat': 'Concat',
-                'AvgPool': 'Pooling', 'LeakyRelu': 'ReLU',
-                'Elu': 'ELU', 'Softsign': 'Softsign', 'Softplus': 'Softplus'}
+                'AvgPool': 'Pooling', 'DepthwiseConv2dNative': 'DepthwiseConv', 'Reshape': 'Flatten',
+                'MatMul': 'InnerProduct', 'Prod': 'InnerProduct', 'FusedBatchNorm': 'BatchNorm',
+                'LRN': 'LRN', 'Concat': 'Concat', 'Elu': 'ELU', 'Softmax': 'Softmax',
+                'LeakyRelu': 'ReLU', 'Softsign': 'Softsign', 'Relu': 'ReLU',
+                'Softplus': 'Softplus'}
+
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise',
             'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
             'RNNCell': 'RNN', 'GRUCell': 'GRU'}
 # weights and bias intializer map more initializer need to be added
-intializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
-                  'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
-                  'eye': 'Identity', 'truncated_normal': 'TruncatedNormal'}
+initializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
+                   'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
+                   'eye': 'Identity', 'truncated_normal': 'TruncatedNormal'}
 # separate activation map for rnn layers
 activation_map = {'Relu': 'relu', 'Elu': 'elu', 'Softsign': 'softsign',
                   'Softplus': 'softplus', 'Sigmoid': 'sigmoid', 'Tanh': 'tanh',
@@ -40,6 +42,8 @@ def get_layer_name(node_name):
     i = node_name.find('/')
     if i == -1:
         name = str(node_name)
+    elif str(node_name[:i]) in ['Repeat', 'Stack']:
+        name = str(node_name.split('/')[1])
     else:
         name = str(node_name[:i])
     return name
@@ -99,7 +103,6 @@ def get_padding(node, layer):
                  layer['params']['kernel_h'] - int(input_shape[1])) / float(2)
         pad_w = ((int(output_shape[2]) - 1) * layer['params']['stride_w'] +
                  layer['params']['kernel_w'] - int(input_shape[2])) / float(2)
-
         # check this logic (see caffe-tensorflow/kaffe/shapes.py)
         if node.type == "Conv2D":
             pad_h = math.ceil(pad_h)
@@ -162,6 +165,8 @@ def import_graph_def(request):
                 d[name] = {'type': [], 'input': [], 'output': [], 'params': {}}
                 order.append(name)
             if node.type in op_layer_map:
+                if (node.type in ["FusedBatchNorm", "Softmax"]):
+                    d[name]['type'] = []
                 d[name]['type'].append(op_layer_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
                 if layer_type == 'rnn':
@@ -220,7 +225,12 @@ def import_graph_def(request):
                 layer['params']['dim'] = str(input_dim)[1:-1]
 
             elif layer['type'][0] == 'Convolution':
-                if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
+                # searching for weights and kernel ops to extract kernel_h,
+                # kernl_w, num_outputs of conv layer also considering repeat & stack layer
+                # as prefixes
+                if str(node.name) in [name + '/weights', name + '/kernel',
+                                      'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
+                                      'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
                     # since conv takes weights as input, this node will be processed first
                     # acquired parameters are then required in get_padding function
                     if len(node.get_attr('shape').dim) == 4:
@@ -265,6 +275,57 @@ def import_graph_def(request):
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
+
+            elif layer['type'][0] == 'DepthwiseConv':
+                if '3D' in node.type:
+                    pass
+                else:
+                    # searching for depthwise_weights and depthwise_kernel ops to extract kernel_h,
+                    # kernl_w, num_outputs of deconv layer also considering repeat & stack layer
+                    # as prefixes
+                    if str(node.name) in [name + '/depthwise_weights', name + '/depthwise_kernel',
+                                          'Repeat/' + name + '/depthwise_weights',
+                                          'Repeat/' + name + '/depthwise_kernel',
+                                          'Stack/' + name + '/depthwise_weights',
+                                          'Stack/' + name + '/depthwise_kernel']:
+                        layer['params']['kernel_h'] = int(
+                            node.get_attr('shape').dim[0].size)
+                        layer['params']['kernel_w'] = int(
+                            node.get_attr('shape').dim[1].size)
+                        layer['params']['num_output'] = int(
+                            node.get_attr('shape').dim[2].size)
+                        layer['params']['depth_multiplier'] = int(
+                            node.get_attr('shape').dim[3].size)
+                    #  extract pointwise_initializer
+                    if name + '/pointwise_weights/Initializer' in str(node.name):
+                        if len(str(node.name).split('/')) >= 4:
+                            pointwise_initializer = str(node.name).split('/')[3]
+                            if pointwise_initializer in initializer_map:
+                                layer['params']['pointwise_initializer'] = \
+                                    initializer_map[pointwise_initializer]
+                    #  extract depthwise_initializer
+                    if name + '/depthwise_weights/Initializer' in str(node.name):
+                        if len(str(node.name).split('/')) >= 4:
+                            depthwise_initializer = str(node.name).split('/')[3]
+                            if depthwise_initializer in initializer_map:
+                                layer['params']['depthwise_initializer'] = \
+                                    initializer_map[depthwise_initializer]
+                    # extract padding of layer
+                    if 'padding' in node.node_def.attr:
+                        layer['params']['padding'] = str(node.get_attr('padding'))
+                    # extract strides of a layer
+                    if 'strides' in node.node_def.attr and str(node.type) == "DepthwiseConv2dNative":
+                        layer['params']['stride_h'] = int(
+                            node.get_attr('strides')[1])
+                        layer['params']['stride_w'] = int(
+                            node.get_attr('strides')[2])
+                        try:
+                            layer['params']['pad_h'], layer['params']['pad_w'] = \
+                                get_padding(node, layer)
+                            pass
+                        except TypeError:
+                            return JsonResponse({'result': 'error', 'error':
+                                                 'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'Pooling':
                 layer['params']['padding'] = str(node.get_attr('padding'))
@@ -319,7 +380,12 @@ def import_graph_def(request):
                                              'Missing shape info in GraphDef'})
 
             elif layer['type'][0] == 'InnerProduct':
-                if str(node.name) == name + '/weights' or str(node.name) == name + '/kernel':
+                # searching for weights and kernel ops to extract num_outputs
+                # of IneerProduct layer also considering repeat & stack layer
+                # as prefixes
+                if str(node.name) in [name + '/weights', name + '/kernel',
+                                      'Repeat/' + name + '/weights', 'Repeat/' + name + '/kernel',
+                                      'Stack/' + name + '/weights', 'Stack/' + name + '/kernel']:
                     layer['params']['num_output'] = int(
                         node.get_attr('shape').dim[1].size)
 
@@ -331,7 +397,20 @@ def import_graph_def(request):
                     except:
                         pass
 
-                if str(node.name) == name + '/AssignMovingAvg/decay':
+                if (node.type == 'FusedBatchNorm'):
+                    layer['params']['eps'] = float(node.get_attr(
+                        'epsilon'))
+                # searching for moving_mean/Initializer ops to extract moving
+                # mean initializer of batchnorm layer
+                if name + '/moving_mean/Initializer' in str(node.name):
+                    layer['params']['moving_mean_initializer'] = \
+                        initializer_map[str(node.name).split('/')[3]]
+                # searching for AssignMovingAvg/decay ops to extract moving
+                # average fraction of batchnorm layer also considering repeat & stack layer
+                # as prefixes
+                if str(node.name) in [name + '/AssignMovingAvg/decay',
+                                      'Repeat/' + name + '/AssignMovingAvg/decay',
+                                      'Stack/' + name + '/AssignMovingAvg/decay']:
                     layer['params']['moving_average_fraction'] = node.get_attr(
                         'value').float_val[0]
 
@@ -395,10 +474,10 @@ def import_graph_def(request):
                         pass
                 if re.match('.*/kernel/Initializer.*', str(node.name)):
                     w_filler = str(node.name).split('/')[4]
-                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                    layer['params']['weight_filler'] = initializer_map[w_filler]
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
-                    layer['params']['bias_filler'] = intializer_map[b_filler]
+                    layer['params']['bias_filler'] = initializer_map[b_filler]
                 if re.match('.*/while/.*/add/y', str(node.name)):
                     layer['params']['unit_forget_bias'] = node.get_attr(
                         'value').float_val[0]
@@ -417,10 +496,10 @@ def import_graph_def(request):
                         pass
                 if re.match('.*/kernel/Initializer.*', str(node.name)):
                     w_filler = str(node.name).split('/')[4]
-                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                    layer['params']['weight_filler'] = initializer_map[w_filler]
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
-                    layer['params']['bias_filler'] = intializer_map[b_filler]
+                    layer['params']['bias_filler'] = initializer_map[b_filler]
                 layer['params']['return_sequences'] = True
 
             elif layer['type'][0] == 'GRU':
@@ -432,10 +511,10 @@ def import_graph_def(request):
                         pass
                 if re.match('.*/gates/kernel/Initializer.*', str(node.name)):
                     w_filler = str(node.name).split('/')[5]
-                    layer['params']['weight_filler'] = intializer_map[w_filler]
+                    layer['params']['weight_filler'] = initializer_map[w_filler]
                 if re.match('.*/gates/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[5]
-                    layer['params']['bias_filler'] = intializer_map[b_filler]
+                    layer['params']['bias_filler'] = initializer_map[b_filler]
                 if re.match('.*/while/.*/', str(node.name)):
                     activation = str(node.name).split('/')
                     if len(activation) == 4 and activation[3] in activation_map:
