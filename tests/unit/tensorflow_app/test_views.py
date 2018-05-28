@@ -5,6 +5,7 @@ import unittest
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.test import Client
+from ide.utils.shapes import get_shapes
 
 
 class UploadTest(unittest.TestCase):
@@ -87,5 +88,21 @@ class BatchNormLayerTest(unittest.TestCase):
         model_file = open(os.path.join(settings.BASE_DIR, 'example/tensorflow', 'BatchNorm.pbtxt'),
                           'r')
         response = self.client.post(reverse('tf-import'), {'file': model_file})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
+
+
+class LRNImportTest(unittest.TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_tf_export(self):
+        model_file = open(os.path.join(settings.BASE_DIR, 'example/keras',
+                                       'AlexNet.json'), 'r')
+        response = self.client.post(reverse('keras-import'), {'file': model_file})
+        response = json.loads(response.content)
+        net = get_shapes(response['net'])
+        response = self.client.post(reverse('tf-export'), {'net': json.dumps(net),
+                                                           'net_name': ''})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
