@@ -1,3 +1,4 @@
+import numpy as np
 import tensorflow as tf
 from google.protobuf import text_format
 from tensorflow.core.framework import graph_pb2
@@ -48,15 +49,29 @@ def get_layer_type(node_name):
     return name
 
 
-def get_padding(node, layer):
+def get_padding(node, layer, session, input_layer_name, input_layer_dim):
     layer_name = get_layer_name(node.name)
     input_shape = None
     output_shape = None
     for input_tensor in node.inputs:
         if get_layer_name(input_tensor.op.name) != layer_name:
             input_shape = input_tensor.get_shape()
+            try:
+                # check to see if dimensions are present in shape
+                temp = [int(i) for i in input_shape[1:]]
+            except:
+                input_shape = (session.run(input_tensor,
+                               feed_dict={session.graph.get_tensor_by_name(input_layer_name + ':0'):
+                                          np.zeros(input_layer_dim)})).shape
     for output_tensor in node.outputs:
         output_shape = output_tensor.get_shape()
+        try:
+            # check to see if dimensions are present in shape
+            temp = [int(i) for i in output_shape[1:]] # noqa
+        except:
+            output_shape = (session.run(output_tensor,
+                            feed_dict={session.graph.get_tensor_by_name(input_layer_name + ':0'):
+                                       np.zeros(input_layer_dim)})).shape
 
     '''
     Use this link: https://www.tensorflow.org/versions/r0.10/api_docs/python/nn.html
@@ -139,6 +154,8 @@ def import_graph_def(request):
         graph_def = graph_pb2.GraphDef()
         d = {}
         order = []
+        input_layer_name = ''
+        input_layer_dim = []
 
         try:
             text_format.Merge(config, graph_def)
@@ -147,10 +164,14 @@ def import_graph_def(request):
 
         tf.import_graph_def(graph_def, name='')
         graph = tf.get_default_graph()
+        session = tf.Session(graph=graph)
 
         for node in graph.get_operations():
             name = get_layer_name(node.name)
             if node.type == 'NoOp':
+                # if init ops is found initialize graph_def
+                init_op = session.graph.get_operation_by_name(node.name)
+                session.run(init_op)
                 continue
             if name not in d:
                 d[name] = {'type': [], 'input': [], 'output': [], 'params': {}}
@@ -203,6 +224,9 @@ def import_graph_def(request):
                 # Swapping channel value to convert NCHW/NCDHW format
                 if input_dim[0] == -1:
                     input_dim[0] = 1
+                # preserving input shape to calculate deconv output shape
+                input_layer_name = node.name
+                input_layer_dim = input_dim[:]
                 temp = input_dim[1]
                 input_dim[1] = input_dim[len(input_dim) - 1]
                 input_dim[len(input_dim) - 1] = temp
@@ -242,7 +266,7 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '2D'
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'] = \
-                            get_padding(node, layer)
+                            get_padding(node, layer, session, input_layer_name, input_layer_dim)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
@@ -256,7 +280,8 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '3D'
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'],\
-                            layer['params']['pad_d'] = get_padding(node, layer)
+                            layer['params']['pad_d'] = \
+                            get_padding(node, layer, session, input_layer_name, input_layer_dim)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
@@ -288,7 +313,8 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '2D'
                     layer['params']['layer_type'] = node.get_attr('padding')
                     try:
-                        layer['params']['pad_h'], layer['params']['pad_w'] = get_padding(node, layer)
+                        layer['params']['pad_h'], layer['params']['pad_w'] = \
+                            get_padding(node, layer, session, input_layer_name, input_layer_dim)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
@@ -338,7 +364,7 @@ def import_graph_def(request):
                             node.get_attr('strides')[2])
                         try:
                             layer['params']['pad_h'], layer['params']['pad_w'] = \
-                                get_padding(node, layer)
+                                get_padding(node, layer, session, input_layer_name, input_layer_dim)
                             pass
                         except TypeError:
                             return JsonResponse({'result': 'error', 'error':
@@ -368,7 +394,8 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '3D'
                     try:
                         layer['params']['pad_d'], layer['params']['pad_h'], \
-                            layer['params']['pad_w'] = get_padding(node, layer)
+                            layer['params']['pad_w'] = \
+                            get_padding(node, layer, session, input_layer_name, input_layer_dim)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
@@ -391,7 +418,7 @@ def import_graph_def(request):
                     layer['params']['layer_type'] = '2D'
                     try:
                         layer['params']['pad_h'], layer['params']['pad_w'] = \
-                            get_padding(node, layer)
+                            get_padding(node, layer, session, input_layer_name, input_layer_dim)
                     except TypeError:
                         return JsonResponse({'result': 'error', 'error':
                                              'Missing shape info in GraphDef'})
