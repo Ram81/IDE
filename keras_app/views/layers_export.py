@@ -487,7 +487,8 @@ def recurrent(layer, layer_in, layerId, tensor=True):
                            bias_regularizer=bias_regularizer, activity_regularizer=activity_regularizer,
                            kernel_constraint=kernel_constraint, recurrent_constraint=recurrent_constraint,
                            bias_constraint=bias_constraint, use_bias=use_bias, dropout=dropout,
-                           recurrent_dropout=recurrent_dropout)
+                           recurrent_dropout=recurrent_dropout, return_sequences=return_sequences,
+                           activation=activation)
     elif (layer['info']['type'] == 'LSTM'):
         recurrent_activation = layer['params']['recurrent_activation']
         unit_forget_bias = layer['params']['unit_forget_bias']
@@ -514,7 +515,8 @@ def recurrent(layer, layer_in, layerId, tensor=True):
                                  recurrent_constraint=recurrent_constraint,
                                  bias_constraint=bias_constraint,
                                  use_bias=use_bias, dropout=dropout,
-                                 recurrent_dropout=recurrent_dropout)
+                                 recurrent_dropout=recurrent_dropout, return_sequences=return_sequences,
+                                 activation=activation)
     if tensor:
         out[layerId] = out[layerId](*layer_in)
     return out
