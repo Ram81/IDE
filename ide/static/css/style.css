@@ -593,7 +593,7 @@ button.url-import-modal-button {
 
 
 .tooltipField{
-  border: none; 
+  border: none;
   box-shadow: none;
   margin: 0px;
   background: transparent;
@@ -699,7 +699,7 @@ button.url-import-modal-button {
     width:40%;
     padding-left: 10px;
     color: white;
-    background-color: #2472c1;
+    background-color: #23b827;
     border: none;
     z-index: 120;
     position: absolute;
@@ -940,7 +940,7 @@ input[type="file"] {
   left:40%;
   top:45%;
   position: absolute;
-  z-index: 5;  
+  z-index: 5;
   -webkit-transform: translateZ(0);
   -ms-transform: translateZ(0);
   transform: translateZ(0);

@@ -1,3 +1,5 @@
+# Implementation for Custom LRN layer used from
+# https://github.com/keras-team/keras/issues/1549
 from keras.layers.core import Layer
 from keras import backend as K
 
