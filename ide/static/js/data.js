@@ -731,6 +731,13 @@ export default {
         type: 'number',
         required: false
       },
+      padding: {
+        name: 'Padding Type',
+        value: 'SAME',
+        type: 'select',
+        options: ['SAME', 'VALID'],
+        required: false
+      },
       kernel_h: {
         name: 'Kernel height',
         value: '',
@@ -1164,14 +1171,14 @@ export default {
     learn: true
   },
   DepthwiseConv: { // Only Keras
-    name: 'depthwise convolution',
+    name: 'depth conv',
     color: '#3f51b5',
     endpoint: {
       src: ['Bottom'],
       trg: ['Top']
     },
     params: {
-      filters: {
+      num_output: {
         name: 'No of outputs',
         value: '',
         type: 'number',
@@ -1213,7 +1220,14 @@ export default {
         type: 'number',
         required: false
       },
-      depth_mult: {
+      padding: {
+        name: 'Padding Type',
+        value: 'SAME',
+        type: 'select',
+        options: ['SAME', 'VALID'],
+        required: false
+      },
+      depth_multiplier: {
         name: 'Depth multiplier',
         value: 1,
         type: 'number',
@@ -1431,7 +1445,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -1577,7 +1591,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -1723,7 +1737,7 @@ export default {
         name: 'Recurrent Initializer',
         value: 'Orthogonal',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal',
           'VarianceScaling', 'Orthogonal', 'Identity', 'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -1933,6 +1947,24 @@ export default {
       caffe: {
         name: 'Available Caffe',
         value: true,
+        type: 'checkbox',
+        required: false
+      },
+      rate: {
+        name: 'Dropout Ratio',
+        value: 0.5,
+        type: 'float',
+        required: false
+      },
+      seed: {
+        name: 'Seed',
+        value: 42,
+        type: 'number',
+        required: false
+      },
+      trainable: {
+        name: 'Trainable',
+        value: false,
         type: 'checkbox',
         required: false
       }
@@ -2182,7 +2214,7 @@ export default {
         name: 'Moving Mean Initializer',
         value: 'Zeros',
         type: 'select',
-        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity', 
+        options: ['Zeros', 'Ones', 'Constant', 'RandomNormal', 'RandomUniform', 'TruncatedNormal', 'VarianceScaling', 'Orthogonal', 'Identity',
         'lecun_uniform', 'glorot_normal', 'glorot_uniform', 'he_normal', 'he_uniform'],
         required: false
       },
@@ -2417,7 +2449,7 @@ export default {
     },
     learn: false
   },
-  ThresholdedReLU: { 
+  ThresholdedReLU: {
     name: 'Thresholded ReLU',
     color: '#009688',
     endpoint: {
@@ -3145,6 +3177,12 @@ export default {
         name: 'Available Caffe',
         value: true,
         type: 'checkbox',
+        required: false
+      },
+      axis: {
+        name: 'Axis',
+        value: -1,
+        type: 'number',
         required: false
       }
     },

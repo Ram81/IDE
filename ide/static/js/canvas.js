@@ -24,7 +24,7 @@ class Canvas extends React.Component {
     this.disableZoom = true;
   }
   /* this function returns the layers between a specified output y and input y
-  it also sneaks in another functionallity of determining which direction is most crowded. this is specifically 
+  it also sneaks in another functionallity of determining which direction is most crowded. this is specifically
   implemented in this function becuase performance will be very low if implemented in another loop.  */
   getBetween(net, output, input, x) {
     var toReturn = [];
@@ -43,11 +43,11 @@ class Canvas extends React.Component {
       }
     });
     var dir = 0;
-    if (neg>pos) dir = -1; else dir = 1; 
+    if (neg>pos) dir = -1; else dir = 1;
     return [dir, toReturn];
   }
   /* this function takes in a var of net and pos
-  net has an array of all the nodes, and pos is a array of x and y coordinates that this 
+  net has an array of all the nodes, and pos is a array of x and y coordinates that this
   function checks to see whether a line will cut through nodes in the pathway.
   */
   checkIfCuttingLine(net, pos) {
@@ -65,7 +65,7 @@ class Canvas extends React.Component {
         var xcalc = ((y - pos[1][1]) / slope) + pos[1][0];
         if (Math.abs(x - xcalc) < 100) {
           var extend = x - xcalc;
-          //the following code is used for positioning the direction of the line and the while loop controling the function iteslf. 
+          //the following code is used for positioning the direction of the line and the while loop controling the function iteslf.
           if (extend < 0) {
             return 1;
           }
@@ -124,7 +124,7 @@ class Canvas extends React.Component {
   componentWillUpdate() {
     this.placeholder = false;
     const net = this.props.net;
-    if (Object.keys(net).length > 0) { //enable zoom buttons if there are layers 
+    if (Object.keys(net).length > 0) { //enable zoom buttons if there are layers
       this.disableZoom = false;
     }
   }
@@ -138,35 +138,61 @@ class Canvas extends React.Component {
     );
     const net = this.props.net;
     if (this.props.rebuildNet) {
-      let combined_layers = ['ReLU', 'PReLU', 'LRN', 'TanH', 'BatchNorm', 'Dropout', 'Scale'];
+      //let combined_layers = ['ReLU', 'PReLU', 'LRN', 'TanH', 'BatchNorm', 'Dropout', 'Scale'];
       this.checkCutting(net);
       Object.keys(net).forEach(inputId => {
         const layer = net[inputId];
         if ((layer.info.phase === this.props.selectedPhase) || (layer.info.phase === null)) {
           const outputs = layer.connection.output;
+          const inputs = layer.connection.input;
+          var topFlag = 0;
+          var bottomFlag = 0;
+          var parentTop, currentTop, parentLayerId, childLayerId;
           outputs.forEach(outputId => {
             if ((net[outputId].info.phase === this.props.selectedPhase) || (net[outputId].info.phase === null)) {
               instance.connect({
                 uuids: [`${inputId}-s0`, `${outputId}-t0`],
                 editable: true
               });
-              /* The following code is to identify layers that are part of a group
-              and modify their border radius */
-              if ($.inArray(net[outputId].info.type, combined_layers) != -1 &&net[inputId].connection.output.length==1){
-                if ($.inArray(net[inputId].info.type, combined_layers) == -1){
-                  $('#'+inputId).css('border-radius', '10px 10px 0px 0px')
-                }
-                else {
-                  $('#'+inputId).css('border-radius', '0px 0px 0px 0px')
-                }
-              }
-              else if (net[inputId].connection.input.length==1){
-                if ($.inArray(net[inputId].info.type, combined_layers) != -1){
-                  $('#'+inputId).css('border-radius', '0px 0px 10px 10px')
-                }
-              }
             }
           });
+          /* The following code is to identify layers that are part of a group
+          and modify their border radius */
+          /* If layer has only one child & is a combined layer it will have a constant
+          difference between there position, using that information to update border radius*/
+          if(outputs.length == 1 && net[outputs[0]]['connection']['input'].length == 1) {
+            childLayerId = outputs[0];
+            parentTop = parseInt(net[childLayerId]['state']['top'].slice(0, net[childLayerId]['state']['top'].length - 2));
+            currentTop = parseInt(net[inputId]['state']['top'].slice(0, net[inputId]['state']['top'].length - 2));
+            //console.log(parentTop + " " + currentTop+ " " + Math.abs(parentTop - currentTop));
+            if(Math.abs(parentTop - currentTop) == 41) {
+              topFlag = 1;
+            }
+          }
+          /* If layer has only one parent & is a combined layer it will have a constant
+          difference between there position, using that information to update border radius*/
+          if(inputs.length == 1) {
+            parentLayerId = inputs[0];
+            parentTop = parseInt(net[parentLayerId]['state']['top'].slice(0, net[parentLayerId]['state']['top'].length - 2));
+            currentTop = parseInt(net[inputId]['state']['top'].slice(0, net[inputId]['state']['top'].length - 2));
+            //console.log("::"+parentTop + " " + currentTop+ " " + Math.abs(parentTop - currentTop));
+            if(Math.abs(parentTop - currentTop) == 41) {
+              bottomFlag = 1;
+            }
+          }
+          /* Assigning border radius based on the location of layer, all four cases considered*/
+          if(topFlag == 1 && bottomFlag == 1) {
+            $('#'+inputId).css('border-radius', '0px 0px 0px 0px')
+          }
+          else if(topFlag == 1 && bottomFlag == 0) {
+            $('#'+inputId).css('border-radius', '10px 10px 0px 0px')
+          }
+          else if(topFlag == 0 && bottomFlag == 1) {
+            $('#'+inputId).css('border-radius', '0px 0px 10px 10px')
+          }
+          else {
+            $('#'+inputId).css('border-radius', '10px 10px 10px 10px')
+          }
         }
       });
       this.props.changeNetStatus(false);
@@ -189,7 +215,7 @@ class Canvas extends React.Component {
       lastLayerId = `l${lastLayerId}`; //add 'l' ahead of the index
       prevLayerId = `l${prevLayerId}`;
       const x1 = parseInt(net[prevLayerId].state.top.split('px'));
-      const x2 = parseInt(net[lastLayerId].state.top.split('px')); 
+      const x2 = parseInt(net[lastLayerId].state.top.split('px'));
       const s = instance.getEndpoints(prevLayerId)[0];
       var t = instance.getEndpoints(lastLayerId);
       // To handle case of loss layer being target
@@ -203,7 +229,7 @@ class Canvas extends React.Component {
         instance.connect({
           source: s,
           target: t});
-      } 
+      }
     }
   }
   allowDrop(event) {
@@ -232,7 +258,7 @@ class Canvas extends React.Component {
     this.placeholder = false;
     event.preventDefault();
     if (event.target.id === 'panZoomContainer' && !this.mouseState.pan) {
-      if (this.props.selectedLayer!=null) 
+      if (this.props.selectedLayer!=null)
         this.props.modifyLayer(this.props.net[this.props.selectedLayer], this.props.selectedLayer);
       this.props.changeSelectedLayer(null);
     }
@@ -249,8 +275,8 @@ class Canvas extends React.Component {
     layer.state.left = `${event.pos['0']}px`;
     layer.state.top = `${event.pos['1']}px`;
     this.props.modifyLayer(layer, layerId);
-    let net = this.props.net  
-    this.checkCutting(net);  
+    let net = this.props.net
+    this.checkCutting(net);
   }
   connectionEvent(connInfo, originalEvent) {
     if (originalEvent != null) { // user manually makes a connection
@@ -309,7 +335,8 @@ class Canvas extends React.Component {
     const canvas = document.getElementById('jsplumbContainer');
     const zoom = instance.getZoom();
 
-    const type = this.props.draggingLayer;
+    // extracting layerId from Pane id which is in form LayerName_Button
+    const type = this.props.draggingLayer.split('_')[0];
     if (data[type].learn && (this.props.selectedPhase === 1)) {
       this.props.addError(`Error: you can not add a "${type}" layer in test phase`);
     } else {

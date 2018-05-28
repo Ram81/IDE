@@ -53,7 +53,14 @@ def Activation(layer):
 
 
 def Dropout(layer):
-    return jsonLayer('Dropout', {}, layer)
+    params = {}
+    if (layer.rate is not None):
+        params['rate'] = layer.rate
+    if (layer.seed is not None):
+        params['seed'] = layer.seed
+    if (layer.trainable is not None):
+        params['trainable'] = layer.trainable
+    return jsonLayer('Dropout', params, layer)
 
 
 def Flatten(layer):
@@ -145,10 +152,10 @@ def Convolution(layer):
 
 
 # Separable Convolution is currently not supported with Theano backend
-'''
+
 def DepthwiseConv(layer):
     params = {}
-    params['filters'] = layer.filters
+    params['num_output'] = layer.filters
     params['kernel_h'], params['kernel_w'] = layer.kernel_size
     params['stride_h'], params['stride_w'] = layer.strides
     params['pad_h'], params['pad_w'] = get_padding([params['kernel_w'], params['kernel_h'], -1,
@@ -174,7 +181,7 @@ def DepthwiseConv(layer):
         params['pointwise_constraint'] = layer.pointwise_constraint.__class__.__name__
     if (layer.bias_constraint):
         params['bias_constraint'] = layer.bias_constraint.__class__.__name__
-    return jsonLayer('DepthwiseConv', params, layer)'''
+    return jsonLayer('DepthwiseConv', params, layer)
 
 
 def Deconvolution(layer):
@@ -370,7 +377,9 @@ def Embed(layer):
 
 # ********** Merge Layers **********
 def Concat(layer):
-    return jsonLayer('Concat', {}, layer)
+    params = {}
+    params['axis'] = layer.axis
+    return jsonLayer('Concat', params, layer)
 
 
 def Eltwise(layer):
@@ -477,6 +486,15 @@ def Bidirectional(layer):
     return jsonLayer('Bidirectional', params, layer)
 
 
+def lrn(layer):
+    params = {}
+    params['k'] = layer.k
+    params['beta'] = layer.beta
+    params['alpha'] = layer.alpha
+    params['local_size'] = layer.n
+    return jsonLayer('LRN', params, layer)
+
+
 # ********** Helper functions **********
 
 # padding logic following
@@ -487,8 +505,8 @@ def get_padding(params, input_shape, output_shape, pad_type, type):
         if (pad_type == 'valid'):
             return 0
         else:
-            pad_h = ((output_shape[2] - 1) * s_h + k_h - input_shape[2]) / 2
-            return pad_h
+            pad_w = ((output_shape[1] - 1) * s_w + k_w - input_shape[1]) / 2
+            return pad_w
     elif (type == '2D'):
         if (pad_type == 'valid'):
             return [0, 0]
