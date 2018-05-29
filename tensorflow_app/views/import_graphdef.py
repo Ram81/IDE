@@ -20,7 +20,8 @@ op_layer_map = {'Placeholder': 'Input', 'Conv2D': 'Convolution', 'Conv3D': 'Conv
 name_map = {'flatten': 'Flatten', 'dropout': 'Dropout',
             'batch': 'BatchNorm', 'add': 'Eltwise', 'mul': 'Eltwise',
             'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
-            'RNNCell': 'RNN', 'GRUCell': 'GRU'}
+            'RNNCell': 'RNN', 'GRUCell': 'GRU', 'lstm': 'LSTM', 'simple': 'RNN',
+            'gru': 'GRU', 'dense': 'InnerProduct'}
 # weights and bias intializer map more initializer need to be added
 initializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
                    'Const': 'Constant', 'zeros': 'Zeros', 'ones': 'Ones',
@@ -167,7 +168,9 @@ def import_graph_def(request):
             if node.type in op_layer_map:
                 if (node.type in ["FusedBatchNorm", "Softmax"]):
                     d[name]['type'] = []
-                d[name]['type'].append(op_layer_map[node.type])
+                # not allowing redundant ops in layer type
+                if (op_layer_map[node.type] not in d[name]['type']):
+                    d[name]['type'].append(op_layer_map[node.type])
             else:  # For cases where the ops are composed of only basic ops
                 if layer_type == 'rnn':
                     node_name = str(node.name).split('/')
@@ -485,6 +488,12 @@ def import_graph_def(request):
                     activation = str(node.name).split('/')
                     if len(activation) == 4 and activation[3] in activation_map:
                         layer['params']['recurrent_activation'] = activation_map[activation[3]]
+                if str(node.type) == "TensorArrayGatherV3":
+                    try:
+                        layer['params']['num_output'] = int(node.get_attr(
+                            'element_shape').dim[1].size)
+                    except:
+                        pass
                 layer['params']['return_sequences'] = True
 
             elif layer['type'][0] == 'RNN':
@@ -500,6 +509,12 @@ def import_graph_def(request):
                 if re.match('.*/bias/Initializer.*', str(node.name)):
                     b_filler = str(node.name).split('/')[4]
                     layer['params']['bias_filler'] = initializer_map[b_filler]
+                if str(node.type) == "TensorArrayGatherV3":
+                    try:
+                        layer['params']['num_output'] = int(node.get_attr(
+                            'element_shape').dim[1].size)
+                    except:
+                        pass
                 layer['params']['return_sequences'] = True
 
             elif layer['type'][0] == 'GRU':
@@ -519,6 +534,12 @@ def import_graph_def(request):
                     activation = str(node.name).split('/')
                     if len(activation) == 4 and activation[3] in activation_map:
                         layer['params']['recurrent_activation'] = activation_map[activation[3]]
+                if str(node.type) == "TensorArrayGatherV3":
+                    try:
+                        layer['params']['num_output'] = int(node.get_attr(
+                            'element_shape').dim[1].size)
+                    except:
+                        pass
                 layer['params']['return_sequences'] = True
         net = {}
         batch_norms = []
