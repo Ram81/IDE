@@ -102,6 +102,7 @@ class UpsampleLayerTest(unittest.TestCase):
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
 
+
 class BatchNormLayerTest(unittest.TestCase):
     def setUp(self):
         self.client = Client()
