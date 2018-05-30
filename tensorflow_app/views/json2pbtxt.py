@@ -31,5 +31,5 @@ lrn = imp.load_source('LRN', BASE_DIR + '/keras_app/custom_layers/lrn.py')
 model = model_from_json(json_str, {'LRN': lrn.LRN})
 
 sess = K.get_session()
-tf.train.write_graph(sess.graph.as_graph_def(), output_fld,
+tf.train.write_graph(sess.graph.as_graph_def(add_shapes=True), output_fld,
                      output_file + '.pbtxt', as_text=True)
