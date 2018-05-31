@@ -422,7 +422,7 @@ class Content extends React.Component {
             if ('customLayers' in response && response.customLayers.length !== 0) {
               this.addInfo(
                 <span>
-                  <span>This network uses custom layers: </span>
+                  <span>This network uses custom layers, to download click on: </span>
                   {response.customLayers.map((layer, index) => {
                     return (
                       <span key={index}>
@@ -430,7 +430,7 @@ class Content extends React.Component {
                           downloadAnchor.download = layer.filename;
                           downloadAnchor.href = layer.url;
                           downloadAnchor.click();
-                        }}>
+                        }} style={{fontWeight: 'bold'}}>
                           {layer.name}
                         </a>
                         {index != response.customLayers.length-1 && <span>, </span>}
