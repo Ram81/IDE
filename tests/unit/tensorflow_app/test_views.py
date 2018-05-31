@@ -118,3 +118,10 @@ class LRNImportTest(unittest.TestCase):
                                                            'net_name': ''})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
+
+    def test_custom_lrn_tf_import(self):
+        model_file = open(os.path.join(settings.BASE_DIR, 'example/tensorflow', 'LRN.pbtxt'),
+                          'r')
+        response = self.client.post(reverse('tf-import'), {'file': model_file})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
