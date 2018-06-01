@@ -23,7 +23,7 @@ name_map = {'flatten': 'Flatten', 'dropout': 'Dropout', 'batch': 'BatchNorm',
             'add': 'Eltwise', 'mul': 'Eltwise', 'dense': 'InnerProduct',
             'BasicLSTMCell': 'LSTM', 'LSTMCell': 'LSTM', 'BasicRNNCell': 'RNN',
             'RNNCell': 'RNN', 'GRUCell': 'GRU', 'lstm': 'LSTM', 'simple': 'RNN',
-            'gru': 'GRU', 'concatenate': 'Concat'}
+            'gru': 'GRU', 'concatenate': 'Concat', 'lrn': 'LRN'}
 
 # weights and bias intializer map more initializer need to be added
 initializer_map = {'random_uniform': 'RandomUniform', 'random_normal': 'RandomNormal',
@@ -244,6 +244,7 @@ def import_graph_def(request):
                 continue
             name = get_layer_name(node.name)
             layer = d[name]
+            print(node.name)
             if layer['type'][0] == 'Input':
                 input_dim = [int(dim.size) for dim in node.get_attr('shape').dim]
                 # Swapping channel value to convert NCHW/NCDHW format
@@ -253,7 +254,7 @@ def import_graph_def(request):
                 input_layer_name = node.name
                 input_layer_dim = input_dim[:]
                 for outputId in layer['output']:
-                    if (d[outputId]['type'][0] in ['LSTM', 'RNN', 'GRU']):
+                    if (len(d[outputId]['type']) > 0 and d[outputId]['type'][0] in ['LSTM', 'RNN', 'GRU']):
                         rnn_input_flag = True
                 if (not rnn_input_flag):
                     temp = input_dim[1]
