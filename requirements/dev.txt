@@ -1,5 +1,6 @@
 -r common.txt
 
+pathlib
 pep8==1.7.0
 flake8==3.0.4
 python-coveralls==2.9.1
