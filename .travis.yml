@@ -37,12 +37,12 @@ before_script:
   - psql -c "ALTER ROLE admin SET default_transaction_isolation TO 'read committed'" -U postgres
   - psql -c "ALTER ROLE admin SET timezone TO 'UTC'" -U postgres
   - psql -c "ALTER USER admin CREATEDB" -U postgres
+  - python manage.py makemigrations
+  - python manage.py migrate
 
 script:
   - flake8 ./
   - npm run ci
-  - python manage.py makemigrations --settings=settings
-  - python manage.py migrate --settings=settings
   - coverage run --source=caffe_app,keras_app,ide/utils manage.py test
 
 after_success:
