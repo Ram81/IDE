@@ -41,8 +41,8 @@ before_script:
 script:
   - flake8 ./
   - npm run ci
-  - python manage.py makemigrations
-  - python manage.py migrate
+  - python manage.py makemigrations --settings=settings
+  - python manage.py migrate --settings=settings
   - coverage run --source=caffe_app,keras_app,ide/utils manage.py test
 
 after_success:
