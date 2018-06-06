@@ -18,6 +18,7 @@ cache:
     - rm -f $HOME/.cache/pip/log/debug.log
 
 install:
+  - cp settings/dev.sample.py settings/dev.py
   - pip install pathlib
   - pip install -r requirements/dev.txt
   - . $HOME/.nvm/nvm.sh
