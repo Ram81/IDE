@@ -46,7 +46,8 @@ class Content extends React.Component {
       modalIsOpen: false,
       totalParameters: 0,
       modelConfig: null,
-      modelFramework: 'caffe'
+      modelFramework: 'caffe',
+      isShared: false
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -804,7 +805,10 @@ class Content extends React.Component {
         } else if (response.result === 'error'){
           this.addError(response.error);
         }
-        this.setState({ load: false });
+        this.setState({
+          load: false,
+          isShared: true
+        });
       }.bind(this),
       error() {
         this.setState({ load: false });
