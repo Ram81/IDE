@@ -755,7 +755,7 @@ class Content extends React.Component {
         },
         success : function (response) {
           if (response.result == 'success'){
-            var url = 'http://fabrik.cloudcv.org/caffe/load?id='+response.id;
+            var url = 'http://localhost:8000/caffe/load?id='+response.id;
             this.modalHeader = 'Your model url is:';
             this.modalContent = (<a href={url}>{url}</a>);
             this.openModal();

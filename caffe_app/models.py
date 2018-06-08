@@ -6,12 +6,11 @@ from django.contrib.auth.models import User
 
 
 class Network(models.Model):
-    id = models.CharField(max_length=20, primary_key=True)
     name = models.CharField(max_length=100)
     network = JSONField()
+    author = models.ForeignKey(User, blank=True, null=True)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now_add=True)
-    author = models.ForeignKey(User, blank=True, null=True)
 
     def __unicode__(self):
         return self.name
@@ -30,7 +29,7 @@ class SharedWith(models.Model):
     updated_at = models.DateField(auto_now_add=True)
 
     def __unicode__(self):
-        return ''
+        return self.user.username
 
 
 class ModelExport(models.Model):
