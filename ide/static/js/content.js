@@ -48,7 +48,8 @@ class Content extends React.Component {
       modelConfig: null,
       modelFramework: 'caffe',
       isShared: false,
-      modelId: 1
+      modelId: 1,
+      socket: null
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -89,11 +90,50 @@ class Content extends React.Component {
     this.calculateParameters = this.calculateParameters.bind(this);
     this.getLayerParameters = this.getLayerParameters.bind(this);
     this.updateLayerShape = this.updateLayerShape.bind(this);
+    this.onSocketConnect = this.onSocketConnect.bind(this);
+    this.sendSocketMessage = this.sendSocketMessage.bind(this);
+    this.onSocketMessage = this.onSocketMessage.bind(this);
+    this.onSocketOpen = this.onSocketOpen.bind(this);
+    this.onSocketError = this.onSocketError.bind(this);
+    this.waitForConnection = this.waitForConnection.bind(this);
     this.modalContent = null;
     this.modalHeader = null;
     // Might need to improve the logic of clickEvent
     this.clickEvent = false;
     this.handleClick = this.handleClick.bind(this);
+  }
+  onSocketConnect() {
+    const socket = this.state.socket;
+    socket.onopen = function(event) { this.onSocketOpen() };
+    socket.onmessage = this.onSocketMessage;
+    socket.onerror = this.onSocketError;
+  }
+  onSocketOpen() {
+    console.log('socket opened for RTC....');
+    console.log(this.state.socket);
+  }
+  onSocketMessage(data) {
+    console.log('Data Received : ' + data['text']);
+    console.log(data);
+  }
+  sendSocketMessage(message) {
+    const socket = this.state.socket;
+    socket.send(message);
+  }
+  onSocketError(error) {
+    console.log('Socket error, disconnected....' + error);
+  }
+  waitForConnection(callback, interval=100) {
+    const socket = this.state.socket;
+    if (socket != null && socket.readyState === 1) {
+      callback();
+    }
+    else {
+      var that = this;
+      setTimeout(function () {
+          that.waitForConnection(callback, interval);
+      }, interval);
+    }
   }
   openModal() {
     this.setState({modalIsOpen: true});
@@ -785,9 +825,13 @@ class Content extends React.Component {
     );
     if ('id' in urlParams){
       this.loadDb(urlParams['id']);
+      this.waitForConnection (this.onSocketConnect, 1000);
     }
   }
   loadDb(id) {
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/connect');
+    this.setState({ socket: socket })
+
     this.dismissAllErrors();
     $.ajax({
       url: '/caffe/load',
@@ -795,7 +839,7 @@ class Content extends React.Component {
       type: 'POST',
       data: {
         proto_id: id,
-        user_id: 3
+        user_id: 2
       },
       success: function (response) {
         if (response.result === 'success'){
