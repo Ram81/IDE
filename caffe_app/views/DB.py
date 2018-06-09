@@ -30,16 +30,18 @@ def save_to_db(request):
             # author and shared with fix users until a login feature is added
             # author of model will be received in request object
             # user with whom model is shared will be received in request object
+            model_id = int(request.POST.get('modelId'))
 
-            model = Network.objects.get(id=request.POST.get('modelId'))
+            model = Network.objects.get(id=model_id)
             model.name = net_name
             model.network = net
             model.author = User.objects.get(id=1)
             model.save()
+
             sharedWith = SharedWith(network=model, user=User.objects.get(id=2),
                                     access_privilege='E')
             sharedWith.save()
-            return JsonResponse({'result': 'success', 'id': request.POST.get('modelId')})
+            return JsonResponse({'result': 'success', 'id': model_id})
         except:
             return JsonResponse({'result': 'error', 'error': str(sys.exc_info()[1])})
 
