@@ -789,15 +789,14 @@ class Content extends React.Component {
   }
   loadDb(id) {
     this.dismissAllErrors();
-    const formData = new FormData();
-    formData.append('proto_id', id);
     $.ajax({
       url: '/caffe/load',
       dataType: 'json',
       type: 'POST',
-      data: formData,
-      processData: false,  // tell jQuery not to process the data
-      contentType: false,
+      data: {
+        proto_id: id,
+        user_id: 3
+      },
       success: function (response) {
         if (response.result === 'success'){
           this.initialiseImportedNet(response.net,response.net_name);

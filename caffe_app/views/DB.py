@@ -3,7 +3,6 @@ import string
 import sys
 
 from caffe_app.models import Network, SharedWith
-from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from yaml import safe_load
@@ -32,12 +31,12 @@ def save_to_db(request):
             # author of model will be received in request object
             # user with whom model is shared will be received in request object
 
-            netObj = Network.objects.get(id=request.POST.get('modelId'))
-            netObj.name = net_name
-            netObj.network = net
-            netObj.author = User.objects.get(id=1)
-            netObj.save()
-            sharedWith = SharedWith(network=netObj, user=User.objects.get(id=2),
+            model = Network.objects.get(id=request.POST.get('modelId'))
+            model.name = net_name
+            model.network = net
+            model.author = User.objects.get(id=1)
+            model.save()
+            sharedWith = SharedWith(network=model, user=User.objects.get(id=2),
                                     access_privilege='E')
             sharedWith.save()
             return JsonResponse({'result': 'success', 'id': request.POST.get('modelId')})
@@ -50,8 +49,15 @@ def load_from_db(request):
     if request.method == 'POST':
         if 'proto_id' in request.POST:
             try:
+                user_id = int(request.POST['user_id'])
                 model = Network.objects.get(pk=request.POST['proto_id'])
                 net = safe_load(model.network)
+
+                sharedModels = SharedWith.objects.filter(network=model, user=user_id)
+                # authorizing the user for access to model
+                if not sharedModels and user_id != model.author.id:
+                    return JsonResponse({'result': 'error',
+                                         'error': 'Permission denied for access to model'})
             except Exception:
                 return JsonResponse({'result': 'error',
                                      'error': 'No network file found'})
