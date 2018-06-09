@@ -9,8 +9,8 @@ class Network(models.Model):
     name = models.CharField(max_length=100)
     network = JSONField()
     author = models.ForeignKey(User, blank=True, null=True)
-    created_at = models.DateField(auto_now_add=True)
-    updated_at = models.DateField(auto_now_add=True)
+    createdOn = models.DateField(auto_now_add=True)
+    updatedOn = models.DateField(auto_now_add=True)
 
     def __unicode__(self):
         return self.name
@@ -25,19 +25,8 @@ class SharedWith(models.Model):
     network = models.ForeignKey(Network)
     user = models.ForeignKey(User)
     access_privilege = models.CharField(max_length=1, choices=ACCESS_PRIVILEGE)
-    created_at = models.DateField(auto_now_add=True)
-    updated_at = models.DateField(auto_now_add=True)
-
-    def __unicode__(self):
-        return self.user.username
-
-
-class ModelExport(models.Model):
-    name = models.CharField(max_length=100)
-    id = models.CharField(max_length=20, primary_key=True)
-    network = JSONField()
     createdOn = models.DateField(auto_now_add=True)
     updatedOn = models.DateField(auto_now_add=True)
 
     def __unicode__(self):
-        return self.id
+        return self.user.username

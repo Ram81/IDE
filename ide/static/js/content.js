@@ -47,7 +47,8 @@ class Content extends React.Component {
       totalParameters: 0,
       modelConfig: null,
       modelFramework: 'caffe',
-      isShared: false
+      isShared: false,
+      modelId: 1
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -752,7 +753,8 @@ class Content extends React.Component {
         type: 'POST',
         data: {
           net: JSON.stringify(netData),
-          net_name: this.state.net_name
+          net_name: this.state.net_name,
+          modelId: this.state.modelId
         },
         success : function (response) {
           if (response.result == 'success'){
