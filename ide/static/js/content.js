@@ -209,8 +209,7 @@ class Content extends React.Component {
     if (this.state.is_shared) {
       this.sendSocketMessage({
         action: "networkUpdate",
-        net: net,
-        networkId: this.state.networkId
+        net: net
       });
     }
   }
@@ -842,7 +841,7 @@ class Content extends React.Component {
     }
   }
   loadDb(id) {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/connect');
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
     this.setState({ socket: socket })
 
     this.dismissAllErrors();
