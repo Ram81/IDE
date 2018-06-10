@@ -1,6 +1,6 @@
 import json
 import yaml
-from channels import Group # noqa: ignore=F405
+from channels import Group
 from channels.auth import channel_session_user, channel_session_user_from_http
 
 
@@ -8,6 +8,9 @@ from channels.auth import channel_session_user, channel_session_user_from_http
 def ws_connect(message):
     print('connection being established...')
     Group('model').add(message.reply_channel)
+    message.reply_channel.send({
+        'accept': True
+    })
 
 
 @channel_session_user

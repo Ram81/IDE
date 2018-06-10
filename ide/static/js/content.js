@@ -48,7 +48,6 @@ class Content extends React.Component {
       modelConfig: null,
       modelFramework: 'caffe',
       isShared: false,
-      networkId: 1,
       socket: null
     };
     this.addNewLayer = this.addNewLayer.bind(this);
@@ -110,12 +109,13 @@ class Content extends React.Component {
   }
   onSocketOpen() {
     // socket opening goes here
-    //console.log('socket opened for RTC....');
+    // console.log('socket opened for RTC....');
   }
   onSocketMessage(message) {
     // message received on socket
     var data = JSON.parse(message['data']);
-
+    // console.log('Data received');
+    // console.log(data);
     this.setState({ net: data['net'] })
   }
   sendSocketMessage(message) {
@@ -803,8 +803,7 @@ class Content extends React.Component {
         type: 'POST',
         data: {
           net: JSON.stringify(netData),
-          net_name: this.state.net_name,
-          networkId: this.state.networkId
+          net_name: this.state.net_name
         },
         success : function (response) {
           if (response.result == 'success'){
@@ -852,8 +851,7 @@ class Content extends React.Component {
       dataType: 'json',
       type: 'POST',
       data: {
-        proto_id: id,
-        user_id: 2
+        proto_id: id
       },
       success: function (response) {
         if (response.result === 'success'){

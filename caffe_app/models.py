@@ -9,6 +9,7 @@ class Network(models.Model):
     name = models.CharField(max_length=100)
     network = JSONField()
     author = models.ForeignKey(User, blank=True, null=True)
+    publicSharing = models.BooleanField(default=False)
     createdOn = models.DateField(auto_now_add=True)
     updatedOn = models.DateField(auto_now_add=True)
 
