@@ -7,15 +7,12 @@ from channels.auth import channel_session_user, channel_session_user_from_http
 @channel_session_user_from_http
 def ws_connect(message):
     print('connection being established...')
-    Group("modelSharing").add(message.reply_channel)
-    message.reply_channel.send({
-        "accept": True
-    })
+    Group('model').add(message.reply_channel)
 
 
 @channel_session_user
 def ws_disconnect(message):
-    Group("modelSharing").discard(message.reply_channel)
+    Group('model').discard(message.reply_channel)
     print('disconnected...')
 
 
@@ -25,7 +22,7 @@ def ws_receive(message):
     data = yaml.safe_load(message["text"])
     networkId = int(data['networkId'])
     net = data['net']
-    message.reply_channel.send({
+    Group('model').send({
         "text": json.dumps({
             "net": net,
             "networkId": networkId
