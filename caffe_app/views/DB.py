@@ -30,7 +30,7 @@ def save_to_db(request):
             # author and shared with fix users until a login feature is added
             # author of model will be received in request object
             # user with whom model is shared will be received in request object
-            model_id = int(request.POST.get('modelId'))
+            model_id = int(request.POST.get('networkId'))
 
             model = Network.objects.get(id=model_id)
             model.name = net_name

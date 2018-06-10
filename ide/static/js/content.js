@@ -48,7 +48,7 @@ class Content extends React.Component {
       modelConfig: null,
       modelFramework: 'caffe',
       isShared: false,
-      modelId: 1,
+      networkId: 1,
       socket: null
     };
     this.addNewLayer = this.addNewLayer.bind(this);
@@ -104,23 +104,26 @@ class Content extends React.Component {
   }
   onSocketConnect() {
     const socket = this.state.socket;
-    socket.onopen = function(event) { this.onSocketOpen() };
+    socket.onopen = this.onSocketOpen;
     socket.onmessage = this.onSocketMessage;
     socket.onerror = this.onSocketError;
   }
   onSocketOpen() {
-    console.log('socket opened for RTC....');
-    console.log(this.state.socket);
+    // socket opening goes here
+    //console.log('socket opened for RTC....');
   }
-  onSocketMessage(data) {
-    console.log('Data Received : ' + data['text']);
-    console.log(data);
+  onSocketMessage(message) {
+    // message received on socket
+    var data = JSON.parse(message['data']);
+
+    this.setState({ net: data['net'] })
   }
   sendSocketMessage(message) {
     const socket = this.state.socket;
-    socket.send(message);
+    socket.send(JSON.stringify(message));
   }
   onSocketError(error) {
+    // socket error handling goes here
     console.log('Socket error, disconnected....' + error);
   }
   waitForConnection(callback, interval=100) {
@@ -203,6 +206,13 @@ class Content extends React.Component {
       oldLayerParams += net[layerId]['info']['parameters'];
     }
     this.setState({ net: net, totalParameters: oldLayerParams });
+    if (this.state.is_shared) {
+      this.sendSocketMessage({
+        action: "networkUpdate",
+        net: net,
+        networkId: this.state.networkId
+      });
+    }
   }
   modifyLayerParams(layer, layerId = this.state.selectedLayer) {
     const net = this.state.net;
@@ -794,7 +804,7 @@ class Content extends React.Component {
         data: {
           net: JSON.stringify(netData),
           net_name: this.state.net_name,
-          modelId: this.state.modelId
+          networkId: this.state.networkId
         },
         success : function (response) {
           if (response.result == 'success'){
@@ -826,6 +836,10 @@ class Content extends React.Component {
     if ('id' in urlParams){
       this.loadDb(urlParams['id']);
       this.waitForConnection (this.onSocketConnect, 1000);
+      this.setState({
+        is_shared: true,
+        networkId: urlParams['id']
+      })
     }
   }
   loadDb(id) {

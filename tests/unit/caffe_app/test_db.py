@@ -19,7 +19,7 @@ class SaveToDBTest(unittest.TestCase):
         net = json.load(tests)['net']
         response = self.client.post(
             reverse('saveDB'),
-            {'net': net, 'net_name': 'netname', 'modelId': 1})
+            {'net': net, 'net_name': 'netname', 'networkId': 1})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
 
@@ -32,7 +32,7 @@ class SaveToDBTest(unittest.TestCase):
         model.save()
         response = self.client.post(
             reverse('saveDB'),
-            {'net': '{"net": "testnet"}', 'net_name': 'name', 'modelId': 1})
+            {'net': '{"net": "testnet"}', 'net_name': 'name', 'networkId': 1})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'success')
         self.assertTrue('id' in response)
