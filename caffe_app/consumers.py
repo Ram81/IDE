@@ -11,12 +11,12 @@ def ws_connect(message):
     message.reply_channel.send({
         'accept': True
     })
+    # extracting id of network from url params
     params = urlparse.parse_qs(message.content['query_string'])
-    networkId = params.get('id',('Not Supplied',))[0]
+    networkId = params.get('id', ('Not Supplied',))[0]
     message.channel_session['networkId'] = networkId
-    print('model-{0}'.format(networkId))
+    # adding socket to a group based on networkId to send updates of network
     Group('model-{0}'.format(networkId)).add(message.reply_channel)
-
 
 
 @channel_session_user
@@ -32,6 +32,8 @@ def ws_receive(message):
     data = yaml.safe_load(message['text'])
     networkId = message.channel_session['networkId']
     net = data['net']
+    # sending update made by one user over all the sessions of open network
+    # Note - conflict resolution still pending
     Group('model-{0}'.format(networkId)).send({
         'text': json.dumps({
             'net': net

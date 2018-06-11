@@ -100,8 +100,10 @@ class Content extends React.Component {
     // Might need to improve the logic of clickEvent
     this.clickEvent = false;
     this.handleClick = this.handleClick.bind(this);
+    this.performSharedUpdate = this.performSharedUpdate.bind(this);
   }
   onSocketConnect() {
+    // binder for socket
     const socket = this.state.socket;
     socket.onopen = this.onSocketOpen;
     socket.onmessage = this.onSocketMessage;
@@ -119,14 +121,17 @@ class Content extends React.Component {
     this.setState({ net: data['net'] })
   }
   sendSocketMessage(message) {
+    // generalized method to send message to socket
     const socket = this.state.socket;
     socket.send(JSON.stringify(message));
   }
   onSocketError(error) {
     // socket error handling goes here
-    console.log('Socket error, disconnected....' + error);
+    //console.log('Socket error, disconnected....' + error);
+    this.addError(error);
   }
   waitForConnection(callback, interval=100) {
+    // delay hook used while creating a new socket
     const socket = this.state.socket;
     if (socket != null && socket.readyState === 1) {
       callback();
@@ -136,6 +141,16 @@ class Content extends React.Component {
       setTimeout(function () {
           that.waitForConnection(callback, interval);
       }, interval);
+    }
+  }
+  performSharedUpdate(net, action='update') {
+    // method to handle pre-processing of message before sending
+    // through a socket based on type of action, will be extended further
+    // as per requirement of message types.
+    if (action == 'update') {
+      this.sendSocketMessage({
+        net: net
+      });
     }
   }
   openModal() {
@@ -168,6 +183,10 @@ class Content extends React.Component {
       totalParameters += net[layerId]['info']['parameters'];
     }
     this.setState({ net, nextLayerId: this.state.nextLayerId + 1, totalParameters: totalParameters });
+    // if model is in RTC mode send updates to respective sockets
+    if (this.state.is_shared) {
+      this.performSharedUpdate(net);
+    }
   }
   changeSelectedLayer(layerId) {
     const net = this.state.net;
@@ -206,11 +225,9 @@ class Content extends React.Component {
       oldLayerParams += net[layerId]['info']['parameters'];
     }
     this.setState({ net: net, totalParameters: oldLayerParams });
+    // if model is in RTC mode send updates to respective sockets
     if (this.state.is_shared) {
-      this.sendSocketMessage({
-        action: "networkUpdate",
-        net: net
-      });
+      this.performSharedUpdate(net);
     }
   }
   modifyLayerParams(layer, layerId = this.state.selectedLayer) {
@@ -268,9 +285,14 @@ class Content extends React.Component {
       });
 
       this.addNewLayer(trainLayer);
+      // if model is in RTC mode addNewLayer will send updates to respective sockets
     } else {
       net[layerId] = layer;
       this.setState({ net });
+      // if model is in RTC mode send updates to respective sockets
+      if (this.state.is_shared) {
+        this.performSharedUpdate(net);
+      }
     }
   }
   deleteLayer(layerId) {
@@ -293,6 +315,10 @@ class Content extends React.Component {
       net[outputId].connection.input.splice(index, 1);
     });
     this.setState({ net, selectedLayer: null, nextLayerId: nextLayerId, totalParameters: totalParameters });
+    // if model is in RTC mode send updates to respective sockets
+    if (this.state.is_shared) {
+      this.performSharedUpdate(net);
+    }
   }
 
   updateLayerShape(net, layerId) {
