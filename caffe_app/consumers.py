@@ -3,6 +3,7 @@ import yaml
 import urlparse
 from channels import Group
 from channels.auth import channel_session_user, channel_session_user_from_http
+from caffe_app.models import Network
 
 
 @channel_session_user_from_http
@@ -32,6 +33,11 @@ def ws_receive(message):
     data = yaml.safe_load(message['text'])
     networkId = message.channel_session['networkId']
     net = data['net']
+    # save changes to database to maintain consistency
+    netObj = Network.objects.get(id=int(networkId))
+    # network object is stored as string in db, when loading it is parsed
+    netObj.network = json.dumps(net)
+    netObj.save()
     # sending update made by one user over all the sessions of open network
     # Note - conflict resolution still pending
     Group('model-{0}'.format(networkId)).send({

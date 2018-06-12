@@ -184,7 +184,7 @@ class Content extends React.Component {
     }
     this.setState({ net, nextLayerId: this.state.nextLayerId + 1, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
-    if (this.state.is_shared) {
+    if (this.state.isShared) {
       this.performSharedUpdate(net);
     }
   }
@@ -226,7 +226,7 @@ class Content extends React.Component {
     }
     this.setState({ net: net, totalParameters: oldLayerParams });
     // if model is in RTC mode send updates to respective sockets
-    if (this.state.is_shared) {
+    if (this.state.isShared) {
       this.performSharedUpdate(net);
     }
   }
@@ -290,7 +290,7 @@ class Content extends React.Component {
       net[layerId] = layer;
       this.setState({ net });
       // if model is in RTC mode send updates to respective sockets
-      if (this.state.is_shared) {
+      if (this.state.isShared) {
         this.performSharedUpdate(net);
       }
     }
@@ -316,7 +316,7 @@ class Content extends React.Component {
     });
     this.setState({ net, selectedLayer: null, nextLayerId: nextLayerId, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
-    if (this.state.is_shared) {
+    if (this.state.isShared) {
       this.performSharedUpdate(net);
     }
   }
@@ -614,33 +614,37 @@ class Content extends React.Component {
       net[layerId]['connection']['input'] = net[layerId]['connection']['input'].filter((val,id,array) => array.indexOf(val) == id);
       net[layerId]['connection']['output'] = net[layerId]['connection']['output'].filter((val,id,array) => array.indexOf(val) == id);
       // const index = +layerId.substring(1);
-      if (type == 'Python'){
-        Object.keys(layer.params).forEach(param => {
-          layer.params[param] = [layer.params[param], false];
-        });
-        layer.params['caffe'] = [true, false];
-      }
-      if (data.hasOwnProperty(type)) {
-        // add the missing params with default values
-        Object.keys(data[type].params).forEach(param => {
-          if (!layer.params.hasOwnProperty(param)) {
-            // The initial value is a list with the first element being the actual value, and the second being a flag which
-            // controls whether the parameter is disabled or not on the frontend.
-            layer.params[param] = [data[type].params[param].value, false];
-          }
-          else {
+      if (this.state.isShared == false) {
+        // if network object is being loaded from db avoid reinitializing the frontend part
+        if (type == 'Python') {
+          Object.keys(layer.params).forEach(param => {
             layer.params[param] = [layer.params[param], false];
-          }
-        });
-        if (type == 'Convolution' || type == 'Pooling' || type == 'Upsample' || type == 'LocallyConnected' || type == 'Eltwise'){
-          layer = this.adjustParameters(layer, 'layer_type', layer.params['layer_type'][0]);
+          });
+          layer.params['caffe'] = [true, false];
         }
-        // layer.props = JSON.parse(JSON.stringify(data[type].props));
-        layer.props = {};
-        // default name
-        layer.props.name = layerId;
-      } else {
-        tempError[type] = null;
+        if (data.hasOwnProperty(type)) {
+          // add the missing params with default values
+          Object.keys(data[type].params).forEach(param => {
+            if (!layer.params.hasOwnProperty(param)) {
+              // The initial value is a list with the first element being the actual value, and the second being a flag which
+              // controls whether the parameter is disabled or not on the frontend.
+              layer.params[param] = [data[type].params[param].value, false];
+            }
+            else {
+              layer.params[param] = [layer.params[param], false];
+            }
+          });
+          if (type == 'Convolution' || type == 'Pooling' || type == 'Upsample' || type == 'LocallyConnected' || type == 'Eltwise'){
+            layer = this.adjustParameters(layer, 'layer_type', layer.params['layer_type'][0]);
+          }
+          // layer.props = JSON.parse(JSON.stringify(data[type].props));
+          layer.props = {};
+          // default name
+          layer.props.name = layerId;
+        }
+        else {
+          tempError[type] = null;
+        }
       }
     });
     // initialize the position of layers
@@ -861,7 +865,7 @@ class Content extends React.Component {
       this.loadDb(urlParams['id']);
       this.waitForConnection (this.onSocketConnect, 1000);
       this.setState({
-        is_shared: true,
+        isShared: true,
         networkId: urlParams['id']
       })
     }

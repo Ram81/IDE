@@ -43,7 +43,7 @@ def load_from_db(request):
     if request.method == 'POST':
         if 'proto_id' in request.POST:
             try:
-                model = Network.objects.get(pk=request.POST['proto_id'])
+                model = Network.objects.get(id=int(request.POST['proto_id']))
                 net = safe_load(model.network)
 
                 # authorizing the user for access to model
