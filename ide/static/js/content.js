@@ -821,35 +821,32 @@ class Content extends React.Component {
     this.setState({ net });
   }
   saveDb(){
-    this.exportPrep(function(netData) {
-      Object.keys(netData).forEach(layerId => {
-        delete netData[layerId].state;
-      });
-      this.setState({ load: true });
-      $.ajax({
-        url: '/caffe/save',
-        dataType: 'json',
-        type: 'POST',
-        data: {
-          net: JSON.stringify(netData),
-          net_name: this.state.net_name
-        },
-        success : function (response) {
-          if (response.result == 'success'){
-            var url = 'http://localhost:8000/caffe/load?id='+response.id;
-            this.modalHeader = 'Your model url is:';
-            this.modalContent = (<a href={url}>{url}</a>);
-            this.openModal();
-          } else if (response.result == 'error') {
-            this.addError(response.error);
-          }
-          this.setState({ load: false });
-        }.bind(this),
-        error() {
-          this.setState({ load: false });
+    let netData = this.state.net;
+    this.setState({ load: true });
+    $.ajax({
+      url: '/caffe/save',
+      dataType: 'json',
+      type: 'POST',
+      data: {
+        net: JSON.stringify(netData),
+        net_name: this.state.net_name
+      },
+      success : function (response) {
+        if (response.result == 'success') {
+          var url = 'http://localhost:8000/caffe/load?id='+response.id;
+          this.modalHeader = 'Your model url is:';
+          this.modalContent = (<a href={url}>{url}</a>);
+          this.openModal();
         }
-      });
-    }.bind(this));
+        else if (response.result == 'error') {
+          this.addError(response.error);
+        }
+        this.setState({ load: false });
+      }.bind(this),
+      error() {
+        this.setState({ load: false });
+      }
+    });
   }
   componentWillMount(){
     var url = window.location.href;
