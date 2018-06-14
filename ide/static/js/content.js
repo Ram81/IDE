@@ -824,7 +824,7 @@ class Content extends React.Component {
     let netData = this.state.net;
     this.setState({ load: true });
     $.ajax({
-      url: '/caffe/save',
+      url: '/save',
       dataType: 'json',
       type: 'POST',
       data: {
@@ -833,7 +833,7 @@ class Content extends React.Component {
       },
       success : function (response) {
         if (response.result == 'success') {
-          var url = 'http://localhost:8000/caffe/load?id='+response.id;
+          var url = 'http://localhost:8000/load?id='+response.id;
           this.modalHeader = 'Your model url is:';
           this.modalContent = (<a href={url}>{url}</a>);
           this.openModal();
@@ -869,11 +869,14 @@ class Content extends React.Component {
   }
   loadDb(id) {
     const socket = new WebSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
-    this.setState({ socket: socket })
+    this.setState({
+      socket: socket ,
+      load: true
+    });
 
     this.dismissAllErrors();
     $.ajax({
-      url: '/caffe/load',
+      url: '/load',
       dataType: 'json',
       type: 'POST',
       data: {
@@ -885,7 +888,8 @@ class Content extends React.Component {
           if (Object.keys(response.net).length){
             this.calculateParameters(response.net);
           }
-        } else if (response.result === 'error'){
+        }
+        else if (response.result === 'error') {
           this.addError(response.error);
         }
         this.setState({
