@@ -93,15 +93,14 @@ class Login extends React.Component {
     if(this.state.loginState) {
       return (
         <div>
-        <a href="/accounts/logout"><h5 className="zoo-modal-text">Logout</h5></a>
-        <h5 className="zoo-modal-text" onClick={() => this.myModelLook() }>My Models</h5>
-        <Modal
+          <a href="/accounts/logout"><h5 className="zoo-modal-text">Logout</h5></a>
+          <h5 className="zoo-modal-text" onClick={() => this.myModelLook() }>My Models</h5>
+          <Modal
             isOpen={this.state.modalIsOpen}
             onRequestClose={this.closeModal}
-            contentLabel="Modal"
             infoStyle={infoStyle}
-            >
-            
+            contentLabel="Modal"
+          >
             <button type="button" style={{padding: 5+'px'}} className="close" onClick={this.closeModal}>&times;</button>
             <h4>{ this.modalHeader }</h4>
             { this.modalContent }
@@ -112,8 +111,8 @@ class Login extends React.Component {
     else {
       return (
         <div>
-        <GithubLoginButton text="Login with Github" onClick={() => window.location="/accounts/github/login"} />
-        <GoogleLoginButton text="Login with Google" onClick={() => window.location="/accounts/google/login"} />
+          <GithubLoginButton text="Login with Github" onClick={() => window.location="/accounts/github/login"} />
+          <GoogleLoginButton text="Login with Google" onClick={() => window.location="/accounts/google/login"} />
         </div>
       )
     }
