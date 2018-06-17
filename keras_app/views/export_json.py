@@ -3,14 +3,17 @@ import os
 import random
 import string
 import yaml
-import traceback
 from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from keras.models import Model
 from layers_export import data, convolution, deconvolution, pooling, dense, dropout, embed,\
     recurrent, batch_norm, activation, flatten, reshape, eltwise, concat, upsample, locally_connected,\
-    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout
+    permute, repeat_vector, regularization, masking, gaussian_noise, gaussian_dropout, alpha_dropout, \
+    bidirectional, time_distributed, lrn, depthwiseConv
+from ..custom_layers import config as custom_layers_config
+
+
 BASE_DIR = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -54,6 +57,7 @@ def export_json(request, is_tf=False):
             'Masking': masking,
             'Convolution': convolution,
             'Deconvolution': deconvolution,
+            'DepthwiseConv': depthwiseConv,
             'Upsample': upsample,
             'Pooling': pooling,
             'LocallyConnected': locally_connected,
@@ -70,13 +74,47 @@ def export_json(request, is_tf=False):
             'GaussianNoise': gaussian_noise,
             'GaussianDropout': gaussian_dropout,
             'AlphaDropout': alpha_dropout,
-            'Scale': ''
+            'Scale': '',
+            'TimeDistributed': time_distributed,
+            'Bidirectional': bidirectional
         }
+
+        custom_layers_map = {
+            'LRN': lrn
+        }
+
+        # Remove any duplicate activation layers (timedistributed and bidirectional layers)
+        redundant_layers = []
+        for layerId in net:
+            if (net[layerId]['connection']['input']
+                    and net[net[layerId]['connection']['input'][0]]['info']['type'] in
+                    ['TimeDistributed', 'Bidirectional']):
+                if len(net[layerId]['connection']['output']) > 0:
+                    target = net[layerId]['connection']['output'][0]
+                    outputs = net[target]['connection']['output']
+                    if len(outputs) > 0:
+                        net[layerId]['connection']['output'] = outputs
+                        for j in outputs:
+                            net[j]['connection']['input'] = [
+                                x if (x != target) else layerId for x in net[j]['connection']['input']]
+                        redundant_layers.append(target)
+            elif (net[layerId]['info']['type'] == 'Input'
+                  and net[net[layerId]['connection']['output'][0]]['info']['type'] in
+                  ['TimeDistributed', 'Bidirectional']):
+                connected_layer = net[layerId]['connection']['output'][0]
+                net[connected_layer]['params']['batch_input_shape'] = net[layerId]['params']['dim']
+        for i in redundant_layers:
+            del net[i]
 
         # Check if conversion is possible
         error = []
+        custom_layers = []
+        for key, value in custom_layers_map.iteritems():
+            layer_map[key] = value
         for layerId in net:
             layerType = net[layerId]['info']['type']
+            if (layerType in custom_layers_map):
+                custom_layers.append(layerType)
             if ('Loss' in layerType or layerType ==
                     'Accuracy' or layerType in layer_map):
                 pass
@@ -89,7 +127,8 @@ def export_json(request, is_tf=False):
         stack = []
         net_out = {}
         dataLayers = ['ImageData', 'Data', 'HDF5Data', 'Input', 'WindowData',
-                      'MemoryData', 'DummyData']
+                      'MemoryData', 'DummyData', 'Bidirectional',
+                      'TimeDistributed']
         processedLayer = {}
         inputLayerId = []
         outputLayerId = []
@@ -125,7 +164,6 @@ def export_json(request, is_tf=False):
                 i = len(stack) - 1
                 while isProcessPossible(stack[i]) is False:
                     i = i - 1
-
                 layerId = stack[i]
                 stack.remove(layerId)
                 if (net[layerId]['info']['type'] != 'Scale'):
@@ -143,14 +181,20 @@ def export_json(request, is_tf=False):
                     type = net[net[layerId]['connection']
                                ['input'][0]]['info']['type']
                     if (type != 'BatchNorm'):
-                        error.append(
-                            layerId + '(' + net[layerId]['info']['type'] + ')')
+                        return JsonResponse({'result': 'error', 'error': 'Cannot convert ' +
+                                             net[layerId]['info']['type'] + ' to Keras'})
+                elif (net[layerId]['info']['type'] in ['TimeDistributed', 'Bidirectional']):
+                    idNext = net[layerId]['connection']['output'][0]
+                    net_out.update(
+                        layer_map[net[layerId]['info']['type']](layerId, idNext, net, layer_in, layer_map))
+                    if len(net[idNext]['connection']['output']) > 0:
+                        net[net[idNext]['connection']['output'][0]
+                            ]['connection']['input'] = [layerId]
+                    processedLayer[idNext] = True
+                    processedLayer[layerId] = True
                 else:
-                    try:
-                        net_out.update(layer_map[net[layerId]['info']['type']](
-                            net[layerId], layer_in, layerId))
-                    except Exception:
-                        return JsonResponse({'result': 'error', 'error': traceback.format_exc()})
+                    net_out.update(layer_map[net[layerId]['info']['type']](
+                        net[layerId], layer_in, layerId))
                 for outputId in net[layerId]['connection']['output']:
                     if outputId not in stack:
                         stack.append(outputId)
@@ -168,7 +212,11 @@ def export_json(request, is_tf=False):
             final_input.append(net_out[i])
 
         for j in outputLayerId:
-            final_output.append(net_out[j])
+            if (net[net[j]['connection']['input'][0]]['info']['type'] in
+                    ['TimeDistributed', 'Bidirectional']):
+                final_output.append(net_out[net[j]['connection']['input'][0]])
+            else:
+                final_output.append(net_out[j])
 
         model = Model(inputs=final_input, outputs=final_output, name=net_name)
         json_string = Model.to_json(model)
@@ -176,10 +224,19 @@ def export_json(request, is_tf=False):
         randomId = datetime.now().strftime('%Y%m%d%H%M%S') + randomword(5)
         with open(BASE_DIR + '/media/' + randomId + '.json', 'w') as f:
             json.dump(json.loads(json_string), f, indent=4)
+
+        custom_layers_response = []
+        for layer in set(custom_layers):
+            layer_data = {'name': layer}
+            layer_data.update(custom_layers_config.config[layer])
+            custom_layers_response.append(layer_data)
+
         if not is_tf:
             return JsonResponse({'result': 'success',
                                  'id': randomId,
                                  'name': randomId + '.json',
-                                 'url': '/media/' + randomId + '.json'})
+                                 'url': '/media/' + randomId + '.json',
+                                 'customLayers': custom_layers_response
+                                 })
         else:
-            return randomId
+            return {'randomId': randomId, 'customLayers': custom_layers_response}

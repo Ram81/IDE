@@ -12,6 +12,7 @@ env/
 # Django stuff:
 *.log
 *.sqlite3
+settings/dev.py
 
 # Sphinx documentation
 docs/build/
@@ -23,4 +24,7 @@ node_modules/
 */migrations/
 
 ide/static/bundle/
+
 .vscode/
+
+celerybeat-schedule

@@ -9,7 +9,8 @@ from django.test import Client
 from keras.layers import Dense, Activation, Dropout, Flatten
 from keras.layers import Reshape, Permute, RepeatVector
 from keras.layers import ActivityRegularization, Masking
-from keras.layers import Conv1D, Conv2D, Conv3D, Conv2DTranspose
+from keras.layers import Conv1D, Conv2D, Conv3D, Conv2DTranspose, \
+    SeparableConv2D
 from keras.layers import UpSampling1D, UpSampling2D, UpSampling3D
 from keras.layers import GlobalMaxPooling1D, GlobalMaxPooling2D
 from keras.layers import MaxPooling1D, MaxPooling2D, MaxPooling3D
@@ -25,6 +26,7 @@ from keras.layers import GaussianNoise, GaussianDropout, AlphaDropout
 from keras.layers import Input
 from keras import regularizers
 from keras.models import Model, Sequential
+from keras import backend as K
 from keras_app.views.layers_export import data, convolution, deconvolution, \
     pooling, dense, dropout, embed, recurrent, batch_norm, activation, \
     flatten, reshape, eltwise, concat, upsample, locally_connected, permute, \
@@ -74,6 +76,21 @@ class ImportJsonTest(unittest.TestCase):
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'error')
         self.assertEqual(response['error'], 'Invalid JSON')
+
+    def test_keras_import_by_url(self):
+        url = 'https://github.com/Cloud-CV/Fabrik/blob/master/example/keras/resnet50.json'
+        # Test 1
+        response = self.client.post(reverse('keras-import'),
+                                    {'url': url})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
+        # Test 2
+        url = 'https://github.com/Cloud-CV/Fabrik/blob/master/some_typo_here'
+        response = self.client.post(reverse('keras-import'),
+                                    {'url': url})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'error')
+        self.assertEqual(response['error'], 'Invalid URL\nHTTP Error 404: Not Found')
 
     def test_keras_import_sample_id(self):
         # Test 1
@@ -131,6 +148,23 @@ class ExportJsonTest(unittest.TestCase):
                                                               'net_name': ''})
         response = json.loads(response.content)
         self.assertEqual(response['result'], 'error')
+
+
+# *********** Keras Backend Test **********
+class KerasBackendTest(unittest.TestCase):
+    def setUp(self):
+        self.client = Client()
+
+    def test_keras_backend(self):
+        dim_order = K.image_dim_ordering()
+        backend = K.backend()
+        if(backend == 'tensorflow'):
+            self.assertEqual(dim_order, 'tf')
+        elif(backend == 'theano'):
+            self.assertNotEqual(dim_order, 'th')
+            self.assertEqual(dim_order, 'tf')
+        else:
+            self.fail('%s backend not supported' % backend)
 
 
 # ********** Import json tests **********
@@ -259,7 +293,7 @@ class DropoutImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(Dropout(0.5, input_shape=(10, 64)))
+        model.add(Dropout(0.5, input_shape=(64, 10)))
         model.build()
         self.keras_type_test(model, 0, 'Dropout')
 
@@ -270,7 +304,7 @@ class FlattenImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(Flatten(input_shape=(10, 64)))
+        model.add(Flatten(input_shape=(64, 10)))
         model.build()
         self.keras_type_test(model, 0, 'Flatten')
 
@@ -292,7 +326,7 @@ class PermuteImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(Permute((2, 1), input_shape=(10, 64)))
+        model.add(Permute((2, 1), input_shape=(64, 10)))
         model.build()
         self.keras_type_test(model, 0, 'Permute')
 
@@ -325,7 +359,7 @@ class MaskingImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(Masking(mask_value=0., input_shape=(5, 100)))
+        model.add(Masking(mask_value=0., input_shape=(100, 5)))
         model.build()
         self.keras_type_test(model, 0, 'Masking')
 
@@ -338,10 +372,10 @@ class ConvolutionImportTest(unittest.TestCase, HelperFunctions):
     def test_keras_import(self):
         # Conv 1D
         model = Sequential()
-        model.add(Conv1D(32, 3, kernel_regularizer=regularizers.l2(0.01),
+        model.add(Conv1D(32, 10, kernel_regularizer=regularizers.l2(0.01),
                          bias_regularizer=regularizers.l2(0.01),
                          activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                         bias_constraint='max_norm', activation='relu', input_shape=(1, 16)))
+                         bias_constraint='max_norm', activation='relu', input_shape=(10, 1)))
         model.build()
         self.keras_param_test(model, 1, 9)
         # Conv 2D
@@ -349,7 +383,7 @@ class ConvolutionImportTest(unittest.TestCase, HelperFunctions):
         model.add(Conv2D(32, (3, 3), kernel_regularizer=regularizers.l2(0.01),
                          bias_regularizer=regularizers.l2(0.01),
                          activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                         bias_constraint='max_norm', activation='relu', input_shape=(1, 16, 16)))
+                         bias_constraint='max_norm', activation='relu', input_shape=(16, 16, 1)))
         model.build()
         self.keras_param_test(model, 1, 13)
         # Conv 3D
@@ -357,13 +391,11 @@ class ConvolutionImportTest(unittest.TestCase, HelperFunctions):
         model.add(Conv3D(32, (3, 3, 3), kernel_regularizer=regularizers.l2(0.01),
                          bias_regularizer=regularizers.l2(0.01),
                          activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                         bias_constraint='max_norm', activation='relu', input_shape=(1, 16, 16, 16)))
+                         bias_constraint='max_norm', activation='relu', input_shape=(16, 16, 16, 1)))
         model.build()
         self.keras_param_test(model, 1, 17)
 
 
-# This is currently unavailable with Theano backend
-'''
 class DepthwiseConvolutionImportTest(unittest.TestCase, HelperFunctions):
     def setUp(self):
         self.client = Client()
@@ -375,8 +407,35 @@ class DepthwiseConvolutionImportTest(unittest.TestCase, HelperFunctions):
                                   bias_regularizer=regularizers.l2(0.01),
                                   activity_regularizer=regularizers.l2(0.01), depthwise_constraint='max_norm',
                                   bias_constraint='max_norm', pointwise_constraint='max_norm',
-                                  activation='relu', input_shape=(1, 16, 16)))
-        self.keras_param_test(model, 1, 12)'''
+                                  activation='relu', input_shape=(16, 16, 1)))
+        self.keras_param_test(model, 1, 12)
+
+    def test_keras_export(self):
+        model_file = open(os.path.join(settings.BASE_DIR, 'example/keras',
+                                       'SeparableConvKerasTest.json'), 'r')
+        response = self.client.post(reverse('keras-import'), {'file': model_file})
+        response = json.loads(response.content)
+        net = get_shapes(response['net'])
+        response = self.client.post(reverse('keras-export'), {'net': json.dumps(net),
+                                                              'net_name': ''})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
+
+
+class LRNImportTest(unittest.TestCase, HelperFunctions):
+    def setUp(self):
+        self.client = Client()
+
+    def test_keras_import_export(self):
+        model_file = open(os.path.join(settings.BASE_DIR, 'example/keras',
+                                       'AlexNet.json'), 'r')
+        response = self.client.post(reverse('keras-import'), {'file': model_file})
+        response = json.loads(response.content)
+        net = get_shapes(response['net'])
+        response = self.client.post(reverse('keras-export'), {'net': json.dumps(net),
+                                                              'net_name': ''})
+        response = json.loads(response.content)
+        self.assertEqual(response['result'], 'success')
 
 
 class DeconvolutionImportTest(unittest.TestCase, HelperFunctions):
@@ -388,7 +447,7 @@ class DeconvolutionImportTest(unittest.TestCase, HelperFunctions):
         model.add(Conv2DTranspose(32, (3, 3), kernel_regularizer=regularizers.l2(0.01),
                                   bias_regularizer=regularizers.l2(0.01),
                                   activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                                  bias_constraint='max_norm', activation='relu', input_shape=(1, 16, 16)))
+                                  bias_constraint='max_norm', activation='relu', input_shape=(16, 16, 1)))
         model.build()
         self.keras_param_test(model, 1, 13)
 
@@ -400,17 +459,17 @@ class UpsampleImportTest(unittest.TestCase, HelperFunctions):
     def test_keras_import(self):
         # Upsample 1D
         model = Sequential()
-        model.add(UpSampling1D(size=2, input_shape=(1, 16)))
+        model.add(UpSampling1D(size=2, input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 2)
         # Upsample 2D
         model = Sequential()
-        model.add(UpSampling2D(size=(2, 2), input_shape=(1, 16, 16)))
+        model.add(UpSampling2D(size=(2, 2), input_shape=(16, 16, 1)))
         model.build()
         self.keras_param_test(model, 0, 3)
         # Upsample 3D
         model = Sequential()
-        model.add(UpSampling3D(size=(2, 2, 2), input_shape=(1, 16, 16, 16)))
+        model.add(UpSampling3D(size=(2, 2, 2), input_shape=(16, 16, 16, 1)))
         model.build()
         self.keras_param_test(model, 0, 4)
 
@@ -423,28 +482,28 @@ class PoolingImportTest(unittest.TestCase, HelperFunctions):
     def test_keras_import(self):
         # Global Pooling 1D
         model = Sequential()
-        model.add(GlobalMaxPooling1D(input_shape=(1, 16)))
+        model.add(GlobalMaxPooling1D(input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 5)
         # Global Pooling 2D
         model = Sequential()
-        model.add(GlobalMaxPooling2D(input_shape=(1, 16, 16)))
+        model.add(GlobalMaxPooling2D(input_shape=(16, 16, 1)))
         model.build()
         self.keras_param_test(model, 0, 8)
         # Pooling 1D
         model = Sequential()
-        model.add(MaxPooling1D(pool_size=2, strides=2, padding='same', input_shape=(1, 16)))
+        model.add(MaxPooling1D(pool_size=2, strides=2, padding='same', input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 5)
         # Pooling 2D
         model = Sequential()
-        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', input_shape=(1, 16, 16)))
+        model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', input_shape=(16, 16, 1)))
         model.build()
         self.keras_param_test(model, 0, 8)
         # Pooling 3D
         model = Sequential()
         model.add(MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), padding='same',
-                               input_shape=(1, 16, 16, 16)))
+                               input_shape=(16, 16, 16, 1)))
         model.build()
         self.keras_param_test(model, 0, 11)
 
@@ -460,7 +519,7 @@ class LocallyConnectedImportTest(unittest.TestCase, HelperFunctions):
         model.add(LocallyConnected1D(32, 3, kernel_regularizer=regularizers.l2(0.01),
                                      bias_regularizer=regularizers.l2(0.01),
                                      activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                                     bias_constraint='max_norm', activation='relu', input_shape=(10, 16)))
+                                     bias_constraint='max_norm', activation='relu', input_shape=(16, 10)))
         model.build()
         self.keras_param_test(model, 1, 12)
         # Conv 2D
@@ -468,7 +527,7 @@ class LocallyConnectedImportTest(unittest.TestCase, HelperFunctions):
         model.add(LocallyConnected2D(32, (3, 3), kernel_regularizer=regularizers.l2(0.01),
                                      bias_regularizer=regularizers.l2(0.01),
                                      activity_regularizer=regularizers.l2(0.01), kernel_constraint='max_norm',
-                                     bias_constraint='max_norm', activation='relu', input_shape=(10, 16, 16)))
+                                     bias_constraint='max_norm', activation='relu', input_shape=(16, 16, 10)))
         model.build()
         self.keras_param_test(model, 1, 14)
 
@@ -548,7 +607,7 @@ class BatchNormImportTest(unittest.TestCase):
         model.add(BatchNormalization(center=True, scale=True, beta_regularizer=regularizers.l2(0.01),
                                      gamma_regularizer=regularizers.l2(0.01),
                                      beta_constraint='max_norm', gamma_constraint='max_norm',
-                                     input_shape=(10, 16)))
+                                     input_shape=(16, 10)))
         model.build()
         json_string = Model.to_json(model)
         with open(os.path.join(settings.BASE_DIR, 'media', 'test.json'), 'w') as out:
@@ -569,7 +628,7 @@ class GaussianNoiseImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(GaussianNoise(stddev=0.1, input_shape=(1, 16)))
+        model.add(GaussianNoise(stddev=0.1, input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 1)
 
@@ -580,7 +639,7 @@ class GaussianDropoutImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(GaussianDropout(rate=0.5, input_shape=(1, 16)))
+        model.add(GaussianDropout(rate=0.5, input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 1)
 
@@ -591,7 +650,7 @@ class AlphaDropoutImportTest(unittest.TestCase, HelperFunctions):
 
     def test_keras_import(self):
         model = Sequential()
-        model.add(AlphaDropout(rate=0.5, seed=5, input_shape=(1, 16)))
+        model.add(AlphaDropout(rate=0.5, seed=5, input_shape=(16, 1)))
         model.build()
         self.keras_param_test(model, 0, 1)
 

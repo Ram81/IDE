@@ -248,6 +248,10 @@ input#netName.hidden {
   background-color: #f44336;
 }
 
+#wrapperLayers{
+  background-color: #f00000;
+}
+
 #pythonLayer{
   background-color: #f44336;
 }
@@ -509,6 +513,61 @@ button.import-textbox-button {
   margin-bottom: 0.5rem;
 }
 
+.url-import-modal-tabs {
+  display: flex;
+  height: 6rem;
+  justify-content: center;
+  align-items: center;
+}
+
+button.url-import-modal-tab {
+  padding: 0.75rem 1rem;
+  background: #eee;
+  font-size: 1.5rem;
+}
+
+button.url-import-modal-tab:first-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+button.url-import-modal-tab:last-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+button.url-import-modal-tab.selected {
+  box-shadow: none;
+  background: #455062;
+  color: white;
+}
+
+.url-import-modal .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.url-import-modal h3 {
+  font-weight: bold;
+}
+
+textarea.url-import-modal-input {
+  width: 100%;
+  height: 5rem;
+  border: 2px solid #ccc;
+  outline: none;
+  resize: none;
+}
+
+button.url-import-modal-button {
+  border-radius: 5px;
+  background-color: #eee;
+  box-shadow: none;
+  border: none;
+  outline: none;
+  line-height: 3rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .setparams{
   position: absolute;
   background-color: white;
@@ -534,7 +593,7 @@ button.import-textbox-button {
 
 
 .tooltipField{
-  border: none; 
+  border: none;
   box-shadow: none;
   margin: 0px;
   background: transparent;
@@ -633,6 +692,30 @@ button.import-textbox-button {
     left:30%;
     border-radius: 5px;
     white-space: pre-line;
+}
+
+.info{
+    padding: 10px;
+    width:40%;
+    padding-left: 10px;
+    color: white;
+    background-color: #23b827;
+    border: none;
+    z-index: 120;
+    position: absolute;
+    top: 3%;
+    left:30%;
+    border-radius: 5px;
+    white-space: pre-line;
+}
+
+.info a{
+    color: white !important;
+    text-decoration:underline;
+    cursor: default;
+}
+.info a:hover{
+    cursor: pointer;
 }
 
 .alert-dismissible .close {
@@ -857,7 +940,7 @@ input[type="file"] {
   left:40%;
   top:45%;
   position: absolute;
-  z-index: 5;  
+  z-index: 5;
   -webkit-transform: translateZ(0);
   -ms-transform: translateZ(0);
   transform: translateZ(0);

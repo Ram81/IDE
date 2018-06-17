@@ -18,6 +18,7 @@ cache:
     - rm -f $HOME/.cache/pip/log/debug.log
 
 install:
+  - pip install pathlib
   - pip install -r requirements/dev.txt
   - . $HOME/.nvm/nvm.sh
   - sh requirements/caffe_tensorflow_keras_install.sh
@@ -27,6 +28,9 @@ install:
 
 before_script:
   - export PYTHONPATH=$PYTHONPATH:$HOME/caffe/caffe/python
+  - export LD_PRELOAD=/usr/lib/libtcmalloc.so.4
+  - export PYCAFFE_ROOT=$HOME/caffe/caffe/python
+  - export PATH=$HOME/caffe/caffe/build/tools:$PYCAFFE_ROOT:$PATH
   - psql -c "CREATE DATABASE fabrik" -U postgres
   - psql -c "CREATE USER admin WITH PASSWORD 'fabrik'" -U postgres
   - psql -c "ALTER ROLE admin SET client_encoding TO 'utf8'" -U postgres
@@ -39,7 +43,7 @@ before_script:
 script:
   - flake8 ./
   - npm run ci
-  - KERAS_BACKEND=theano coverage run --source=caffe_app,keras_app,ide/utils manage.py test
+  - coverage run --source=caffe_app,keras_app,ide/utils manage.py test
 
 after_success:
   - coveralls

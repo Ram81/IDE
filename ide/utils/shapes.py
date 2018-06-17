@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 
 
 def data(layer):
@@ -8,6 +9,9 @@ def data(layer):
             Output = [3] + [layer['params']['crop_size']]*2
         elif (('new_height' in layer['params']) and ('new_width' in layer['params'])):
             Output = [3, layer['params']['new_height'], layer['params']['new_width']]
+        else:
+            # When a new layer is created with default parameters
+            Output = []
     elif (layer['info']['type'] in ['Input', 'DummyData']):
         Output = map(int, layer['params']['dim'].split(','))[1:]
     elif (layer['info']['type'] == 'MemoryData'):
@@ -26,41 +30,65 @@ def filter(layer):
         num_out = layer['shape']['input'][0]
     else:
         num_out = layer['params']['num_output']
-    if (layer['info']['type'] in ['Deconvolution', 'DepthwiseConv']):
+    if (layer['info']['type'] == 'Deconvolution'):
+        _, i_h, i_w = layer['shape']['input']
+        k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
+        s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
+        p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
+
+        o_h = i_h * s_h
+        o_w = i_w * s_w
+        if ('padding' in layer['params'] and layer['params']['padding'] == 'VALID'):
+            # handling tensorflow deconv layer separately
+            o_h += max(k_h - s_h, 0)
+            o_w += max(k_w - s_w, 0)
+
+        return [num_out, o_h, o_w]
+    elif (layer['info']['type'] == 'DepthwiseConv'):
         _, i_h, i_w = layer['shape']['input']
         k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
         s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
         p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
         o_h = int((i_h - 1)*s_h + k_h - 2*p_h)
         o_w = int((i_w - 1)*s_w + k_w - 2*p_w)
+
         return [num_out, o_h, o_w]
     else:
         if (layer['params']['layer_type'] == '1D'):
-            _, i_w = layer['shape']['input']
-            k_w = layer['params']['kernel_w']
-            s_w = layer['params']['stride_w']
-            p_w = layer['params']['pad_w']
-            o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
+            try:
+                _, i_w = layer['shape']['input']
+                k_w = layer['params']['kernel_w']
+                s_w = layer['params']['stride_w']
+                p_w = layer['params']['pad_w']
+                o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
+            except:
+                return [num_out, 0]
             return [num_out, o_w]
         elif (layer['params']['layer_type'] == '2D'):
-            _, i_h, i_w = layer['shape']['input']
-            k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
-            s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
-            p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
-            o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
-            o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
+            try:
+                _, i_h, i_w = layer['shape']['input']
+                k_h, k_w = layer['params']['kernel_h'], layer['params']['kernel_w']
+                s_h, s_w = layer['params']['stride_h'], layer['params']['stride_w']
+                p_h, p_w = layer['params']['pad_h'], layer['params']['pad_w']
+                o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
+                o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
+            except:
+                return [num_out, 0, 0]
             return [num_out, o_h, o_w]
         else:
-            _, i_d, i_h, i_w = layer['shape']['input']
-            k_h, k_w, k_d = layer['params']['kernel_h'], layer['params']['kernel_w'],\
-                layer['params']['kernel_d']
-            s_h, s_w, s_d = layer['params']['stride_h'], layer['params']['stride_w'],\
-                layer['params']['stride_d']
-            p_h, p_w, p_d = layer['params']['pad_h'], layer['params']['pad_w'],\
-                layer['params']['pad_d']
-            o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
-            o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
-            o_d = int((i_d + 2 * p_d - k_d) / float(s_d) + 1)
+            try:
+                _, i_d, i_h, i_w = layer['shape']['input']
+                k_h, k_w, k_d = layer['params']['kernel_h'], layer['params']['kernel_w'],\
+                    layer['params']['kernel_d']
+                s_h, s_w, s_d = layer['params']['stride_h'], layer['params']['stride_w'],\
+                    layer['params']['stride_d']
+                p_h, p_w, p_d = layer['params']['pad_h'], layer['params']['pad_w'],\
+                    layer['params']['pad_d']
+                o_h = int((i_h + 2 * p_h - k_h) / float(s_h) + 1)
+                o_w = int((i_w + 2 * p_w - k_w) / float(s_w) + 1)
+                o_d = int((i_d + 2 * p_d - k_d) / float(s_d) + 1)
+            except:
+                return [num_out, 0, 0, 0]
             return [num_out, o_d, o_h, o_w]
 
 
@@ -93,7 +121,8 @@ def output(layer):
 def flatten(layer):
     out = 1
     for i in layer['shape']['input']:
-        out *= i
+        if (i > 0):
+            out *= i
     return [out]
 
 
@@ -120,48 +149,51 @@ def handle_concat_layer(outputLayer, inputLayer):
     return shape
 
 
-def get_layer_shape(layerId, net):
+def get_layer_shape(layer):
     # separating checking the type of layer inorder to make it modular
     # which can be reused in case we only want to get shapes of a single
     # layer, for example: if a new layer is added to already drawn model
     dataLayers = ['ImageData', 'Data', 'HDF5Data', 'Input', 'WindowData', 'MemoryData', 'DummyData']
 
-    if(net[layerId]['info']['type'] in dataLayers):
-        return data(net[layerId])
+    if(layer['info']['type'] in dataLayers):
+        return data(layer)
 
-    elif(net[layerId]['info']['type'] in ['Convolution', 'Pooling', 'Deconvolution', 'DepthwiseConv']):
-        return filter(net[layerId])
+    elif(layer['info']['type'] in ['Convolution', 'Pooling', 'Deconvolution', 'DepthwiseConv']):
+        return filter(layer)
 
-    elif(net[layerId]['info']['type'] in ['InnerProduct', 'Recurrent', 'RNN', 'LSTM', 'Embed']):
-        return output(net[layerId])
+    elif(layer['info']['type'] in ['InnerProduct', 'Recurrent', 'RNN', 'LSTM', 'Embed']):
+        return output(layer)
 
-    elif(net[layerId]['info']['type'] == 'Flatten'):
-        return flatten(net[layerId])
+    elif(layer['info']['type'] == 'Flatten'):
+        return flatten(layer)
 
-    elif(net[layerId]['info']['type'] == 'Reshape'):
-        return reshape(net[layerId])
+    elif(layer['info']['type'] == 'Reshape'):
+        return reshape(layer)
 
-    elif(net[layerId]['info']['type'] == 'Upsample'):
-        return upsample(net[layerId])
+    elif(layer['info']['type'] == 'Upsample'):
+        return upsample(layer)
 
-    elif(net[layerId]['info']['type'] == 'RepeatVector'):
-        return repeat(net[layerId])
+    elif(layer['info']['type'] == 'RepeatVector'):
+        return repeat(layer)
 
-    elif(net[layerId]['info']['type'] in ['SPP', 'Crop']):
-        raise Exception('Cannot determine shape of ' + net[layerId]['info']['type'] + 'layer.')
+    elif(layer['info']['type'] in ['SPP', 'Crop']):
+        raise Exception('Cannot determine shape of ' + layer['info']['type'] + 'layer.')
 
     else:
-        return identity(net[layerId])
+        return identity(layer)
 
 
 def get_shapes(net):
-    stack = []
+    queue = deque([])
     dataLayers = ['ImageData', 'Data', 'HDF5Data', 'Input', 'WindowData', 'MemoryData', 'DummyData']
     processedLayer = {}
+    layer_indegree = {}
 
     # Finding the data layer
     for layerId in net:
         processedLayer[layerId] = False
+        # store indegree of every layer for Topological sort
+        layer_indegree[layerId] = len(net[layerId]['connection']['input'])
         net[layerId]['shape'] = {}
         if (net[layerId]['info']['type'] == 'Python'):
             if ('endPoint' not in net[layerId]['params'].keys()):
@@ -171,16 +203,16 @@ def get_shapes(net):
                 if (net[layerId]['params']['endPoint'] == "1, 0"):
                     raise Exception('Cannot determine shape of Python layer.')
         if(net[layerId]['info']['type'] in dataLayers):
-            stack.append(layerId)
+            queue.append(layerId)
 
-    while(len(stack)):
-        layerId = stack[0]
-        stack.remove(layerId)
+    while(len(queue)):
+        # using deque as stack
+        layerId = queue.pop()
 
         if(net[layerId]['info']['type'] in dataLayers):
-            net[layerId]['shape']['input'], net[layerId]['shape']['output'] = get_layer_shape(layerId, net)
+            net[layerId]['shape']['input'], net[layerId]['shape']['output'] = get_layer_shape(net[layerId])
         else:
-            net[layerId]['shape']['output'] = get_layer_shape(layerId, net)
+            net[layerId]['shape']['output'] = get_layer_shape(net[layerId])
 
         for outputId in net[layerId]['connection']['output']:
             if (not processedLayer[outputId]):
@@ -190,14 +222,11 @@ def get_shapes(net):
                 else:
                     net[outputId]['shape']['input'] = net[layerId]['shape']['output'][:]
 
-                # Implement topo sort check
-                flag = True
-                for parentLayerId in net[outputId]['connection']['input']:
-                    if ((not processedLayer[parentLayerId]) and parentLayerId != layerId):
-                        flag = False
-                        break
-                if flag:
-                    stack.append(outputId)
+                # Decrement indegree of every output node of current layer
+                layer_indegree[outputId] -= 1
+
+                if layer_indegree[outputId] == 0:
+                    queue.append(outputId)
             else:
                 if (net[outputId]['info']['type'] == "Concat"):
                     net[outputId]['shape']['input'] = handle_concat_layer(net[outputId], net[layerId])
