@@ -454,9 +454,6 @@ class Content extends React.Component {
     }.bind(this));
   }
   importNet(framework, id) {
-    if (String(framework).startsWith('sample')) {
-      this.setState({"modelID": ""})
-    } 
     this.dismissAllErrors();
     this.closeModal();
     this.clickEvent = false;
@@ -749,27 +746,20 @@ class Content extends React.Component {
         delete netData[layerId].state;
       });
       this.setState({ load: true });
-      var dataToPost = {
-          net: JSON.stringify(netData),
-          net_name: this.state.net_name
-        }
-      if (this.state.modelID && this.state.modelID != "") {
-        dataToPost.model_id = this.state.modelID
-      }
       $.ajax({
         url: '/caffe/save',
         dataType: 'json',
         type: 'POST',
-        data: dataToPost,
+        data: {
+          net: JSON.stringify(netData),
+          net_name: this.state.net_name
+        },
         success : function (response) {
           if (response.result == 'success'){
             var url = 'http://fabrik.cloudcv.org/caffe/load?id='+response.id;
-            this.modalHeader = 'If you are logged in, your model has been saved to your account. Your model url is:';
+            this.modalHeader = 'Your model url is:';
             this.modalContent = (<a href={url}>{url}</a>);
             this.openModal();
-            if (response.user) {
-              this.setState({"modelID": response.id})
-            }
           } else if (response.result == 'error') {
             this.addError(response.error);
           }
@@ -796,11 +786,9 @@ class Content extends React.Component {
     }
   }
   loadDb(id) {
-    this.closeModal();
     this.dismissAllErrors();
     const formData = new FormData();
     formData.append('proto_id', id);
-    this.setState({"modelID": id});
     $.ajax({
       url: '/caffe/load',
       dataType: 'json',

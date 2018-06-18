@@ -1,8 +1,7 @@
 from django.conf.urls import url
-from views import login, check_login, get_models
+from views import login, check_login
 
 urlpatterns = [
     url(r'^login$', login.as_view()),
-    url(r'^checkLogin$', check_login),
-    url(r'^getModels$', get_models)
+    url(r'^checkLogin$', check_login)
 ]

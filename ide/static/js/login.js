@@ -1,51 +1,15 @@
 import React from 'react';
-import {GithubLoginButton, GoogleLoginButton} from 'react-social-login-buttons';
-import Modal from 'react-modal';
+import { GithubLoginButton, GoogleLoginButton } from 'react-social-login-buttons';
 
 class Login extends React.Component {
   constructor(props) {
     super(props);
-    this.getMyModels = this.getMyModels.bind(this);
-    this.openModal = this.openModal.bind(this);
-    this.closeModal = this.closeModal.bind(this);
-    this.myModelLook = this.myModelLook.bind(this);
+    this.checkLogin = this.checkLogin.bind(this);
     this.logoutUser = this.logoutUser.bind(this);
   }
-  getMyModels() {
-    $.ajax({
-      url: '/backendAPI/getModels',
-      type: 'GET',
-      processData: false,  // tell jQuery not to process the data
-      contentType: false,
-      success: function (response) {
-        this.setState({ "myModels": response })
-        var toRet = []
-        this.state.myModels.forEach(function (el) {
-          toRet.push(
-            <a
-              key={el.id}
-              className="btn my-models-list-item"
-              onClick={() => {
-                this.props.loadDb(el.id)
-                this.closeModal()
-              }}
-            >
-              {el.name}
-            </a>
-          )
-        }.bind(this))
-        this.setState({ models: toRet })
-        this.forceUpdate()
-      }.bind(this)
-    });
-  }
-
   componentWillMount() {
-    this.setState({
-      loginState: false,
-      models: []
-    })
-    this.checkLogin()
+    this.setState({ loginState: false });
+    this.checkLogin();
   }
   checkLogin() {
     $.ajax({
@@ -54,69 +18,36 @@ class Login extends React.Component {
       processData: false,  // tell jQuery not to process the data
       contentType: false,
       success: function (response) {
-          this.setState({
-            loginState: response.result
-          })
-          this.forceUpdate()
-          if (response.result) {
-            this.getMyModels()
-          }
+        this.setState({ loginState: response.result });
+      }.bind(this),
+      error: function () {
+        this.setState({ loginState: false });
+        this.addError("Error occurred while logging in");
       }.bind(this)
     });
   }
-  myModelLook() {
-    {
-      this.modalHeader = 'My models:';
-      this.modalContent = (
-        <div className="my-models-list-container">
-          {this.state.models}
-        </div>
-      );
-      this.openModal();
-    }
-  }
-  openModal() {
-    this.setState({ modalIsOpen: true })
-  }
-  closeModal() {
-    this.setState({ modalIsOpen: false })
-  }
   logoutUser() {
-    this.setState({
-      loginState: false
+    $.ajax({
+      url: '/accounts/logout',
+      type: 'GET',
+      processData: false,  // tell jQuery not to process the data
+      contentType: false,
+      success: function (response) {
+        if (response) {
+          this.setState({ loginState: false });
+        }
+      }.bind(this),
+      error: function () {
+        this.setState({ loginState: true });
+        this.addError("Error occurred while logging out");
+      }.bind(this)
     });
   }
   render() {
-    const infoStyle = {
-      content : {
-        top                   : '50%',
-        left                  : '50%',
-        right                 : '60%',
-        bottom                : 'auto',
-        marginRight           : '-50%',
-        transform             : 'translate(-50%, -50%)',
-        borderRadius          : '8px',
-        zIndex                : '200'
-      },
-      overlay: {
-        zIndex                : 100
-      }
-    };
     if(this.state.loginState) {
       return (
         <div>
-          <a href="/accounts/logout" onClick={ () => this.logoutUser() }><h5 className="zoo-modal-text">Logout</h5></a>
-          <h5 className="zoo-modal-text" onClick={() => this.myModelLook() }>My Models</h5>
-          <Modal
-            isOpen={this.state.modalIsOpen}
-            onRequestClose={this.closeModal}
-            infoStyle={infoStyle}
-            contentLabel="Modal"
-          >
-            <button type="button" style={{padding: 5+'px'}} className="close" onClick={this.closeModal}>&times;</button>
-            <h4>{ this.modalHeader }</h4>
-            { this.modalContent }
-          </Modal>
+          <a className="btn btn-block extra-buttons text-left" onClick={ () => this.logoutUser() }>Logout</a>
         </div>
       )
     }
@@ -128,8 +59,9 @@ class Login extends React.Component {
         </div>
       )
     }
+  }
 }
-}
+
 Login.propTypes = {
   loadDb: React.PropTypes.func
 };
