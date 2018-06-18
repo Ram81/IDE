@@ -6,7 +6,10 @@ class Login extends React.Component {
   constructor(props) {
     super(props);
     this.getMyModels = this.getMyModels.bind(this);
+    this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.myModelLook = this.myModelLook.bind(this);
+    this.logoutUser = this.logoutUser.bind(this);
   }
   getMyModels() {
     $.ajax({
@@ -31,15 +34,17 @@ class Login extends React.Component {
             </a>
           )
         }.bind(this))
-        this.setState({ "models": toRet })
+        this.setState({ models: toRet })
         this.forceUpdate()
       }.bind(this)
     });
   }
 
   componentWillMount() {
-    this.setState({ "loginState": false })
-    this.setState({"models": ""})
+    this.setState({
+      loginState: false,
+      models: []
+    })
     this.checkLogin()
   }
   checkLogin() {
@@ -49,7 +54,9 @@ class Login extends React.Component {
       processData: false,  // tell jQuery not to process the data
       contentType: false,
       success: function (response) {
-          this.setState({ "loginState": response.result })
+          this.setState({
+            loginState: response.result
+          })
           this.forceUpdate()
           if (response.result) {
             this.getMyModels()
@@ -61,18 +68,23 @@ class Login extends React.Component {
     {
       this.modalHeader = 'My models:';
       this.modalContent = (
-      <div className="my-models-list-container">
-        {this.state.models}
-      </div>
-    );
+        <div className="my-models-list-container">
+          {this.state.models}
+        </div>
+      );
       this.openModal();
     }
   }
   openModal() {
-    this.setState({"modalIsOpen": true})
+    this.setState({ modalIsOpen: true })
   }
   closeModal() {
-    this.setState({"modalIsOpen": false})
+    this.setState({ modalIsOpen: false })
+  }
+  logoutUser() {
+    this.setState({
+      loginState: false
+    });
   }
   render() {
     const infoStyle = {
@@ -93,7 +105,7 @@ class Login extends React.Component {
     if(this.state.loginState) {
       return (
         <div>
-          <a href="/accounts/logout"><h5 className="zoo-modal-text">Logout</h5></a>
+          <a href="/accounts/logout" onClick={ () => this.logoutUser() }><h5 className="zoo-modal-text">Logout</h5></a>
           <h5 className="zoo-modal-text" onClick={() => this.myModelLook() }>My Models</h5>
           <Modal
             isOpen={this.state.modalIsOpen}
