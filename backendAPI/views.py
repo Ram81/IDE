@@ -10,4 +10,14 @@ class login(TemplateView):
 
 
 def check_login(request):
-    return JsonResponse({'result': request.user.is_authenticated()})
+    user = request.user
+    user_id = user.id
+    username = ''
+    is_authenticated = request.user.is_authenticated()
+    if (is_authenticated):
+        username = user.username
+    return JsonResponse({
+        'result': is_authenticated,
+        'user_id': user_id,
+        'username': username
+    })

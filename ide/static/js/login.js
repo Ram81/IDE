@@ -18,7 +18,10 @@ class Login extends React.Component {
       processData: false,  // tell jQuery not to process the data
       contentType: false,
       success: function (response) {
-        this.setState({ loginState: response.result });
+        if (response.result) {
+          this.setState({ loginState: response.result });
+          this.props.setUserId(response.user_id);
+        }
       }.bind(this),
       error: function () {
         this.setState({ loginState: false });
@@ -35,6 +38,7 @@ class Login extends React.Component {
       success: function (response) {
         if (response) {
           this.setState({ loginState: false });
+          this.props.setUserId(null);
         }
       }.bind(this),
       error: function () {
@@ -63,7 +67,7 @@ class Login extends React.Component {
 }
 
 Login.propTypes = {
-  loadDb: React.PropTypes.func
+  setUserId: React.PropTypes.func
 };
 
 export default Login;
