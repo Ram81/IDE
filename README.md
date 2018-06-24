@@ -52,9 +52,9 @@ Setting up Fabrik on your local machine is really easy. You can setup Fabrik usi
     ```
     cp settings/dev.sample.py settings/dev.py
     ```
-    Replace the hostname to 'localhost' in settings/dev.py line 14.
+    Replace the hostname to ``` localhost ``` in settings/dev.py line 14.
 
-4. Install redis server and replace the hostname to 'localhost' in settings/common.py line 99.
+4. Install redis server and replace the hostname to ``` localhost ``` in settings/common.py line 99.
     ```
     sudo apt-get install redis-server
     ```
