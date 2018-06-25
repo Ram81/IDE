@@ -1,5 +1,4 @@
 import React from 'react';
-import { GithubLoginButton, GoogleLoginButton } from 'react-social-login-buttons';
 
 class Login extends React.Component {
   constructor(props) {
@@ -57,9 +56,18 @@ class Login extends React.Component {
     }
     else {
       return (
-        <div>
-          <GithubLoginButton text="Login with Github" onClick={() => window.location="/accounts/github/login"} />
-          <GoogleLoginButton text="Login with Google" onClick={() => window.location="/accounts/google/login"} />
+        <div className="row">
+          <div className="col-md-6">
+            <a className="btn btn-block btn-social btn-github" onClick={() => window.location="/accounts/github/login"} style={{width: '105px'}}>
+              <span className="fa fa-github"></span>Github
+            </a>
+          </div>
+
+          <div className="col-md-5">
+            <a className="btn btn-block btn-social btn-google" onClick={() => window.location="/accounts/google/login"}  style={{width: '105px'}}>
+              <span className="fa fa-google"></span>Google
+            </a>
+          </div>
         </div>
       )
     }
