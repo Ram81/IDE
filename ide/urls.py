@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^load*', load_from_db, name='loadDB'),
     url(r'^model_parameter/', calculate_parameter, name='calculate-parameter'),
     url(r'^layer_parameter/', fetch_layer_shape, name='fetch-layer-shape'),
+    url(r'^backendAPI/', include('backendAPI.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
