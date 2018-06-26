@@ -5,6 +5,9 @@ def index(request):
     return render(request, 'index.html')
 
 '''
+need to use this further for integration
+kept for integration purpose till next commit
+
 @csrf_exempt
 def save_to_db(request):
     if request.method == 'POST':
