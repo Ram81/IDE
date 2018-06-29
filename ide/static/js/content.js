@@ -12,6 +12,7 @@ import ModelZoo from './modelZoo';
 import Login from './login';
 import ImportTextbox from './importTextbox';
 import UrlImportModal from './urlImportModal';
+import UserProfile from './UserProfile';
 import $ from 'jquery'
 
 const infoStyle = {
@@ -49,8 +50,7 @@ class Content extends React.Component {
       modelConfig: null,
       modelFramework: 'caffe',
       isShared: false,
-      socket: null,
-      user_id: null
+      socket: null
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -91,6 +91,7 @@ class Content extends React.Component {
     this.calculateParameters = this.calculateParameters.bind(this);
     this.getLayerParameters = this.getLayerParameters.bind(this);
     this.updateLayerShape = this.updateLayerShape.bind(this);
+    this.createSocket = this.createSocket.bind(this);
     this.onSocketConnect = this.onSocketConnect.bind(this);
     this.sendSocketMessage = this.sendSocketMessage.bind(this);
     this.onSocketMessage = this.onSocketMessage.bind(this);
@@ -104,6 +105,9 @@ class Content extends React.Component {
     this.clickEvent = false;
     this.handleClick = this.handleClick.bind(this);
     this.performSharedUpdate = this.performSharedUpdate.bind(this);
+  }
+  createSocket(url) {
+    return new WebSocket(url);
   }
   onSocketConnect() {
     // binder for socket
@@ -163,7 +167,7 @@ class Content extends React.Component {
     this.setState({ modalIsOpen: false });
   }
   setUserId(user_id) {
-    this.setState({ user_id: user_id });
+    UserProfile.setUserId(user_id);
   }
   addNewLayer(layer) {
     const net = this.state.net;
@@ -829,18 +833,20 @@ class Content extends React.Component {
   saveDb(){
     let netData = this.state.net;
     this.setState({ load: true });
+
     $.ajax({
       url: '/save',
       dataType: 'json',
       type: 'POST',
       data: {
         net: JSON.stringify(netData),
-        net_name: this.state.net_name
+        net_name: this.state.net_name,
+        user_id: UserProfile.getUserId()
       },
       success : function (response) {
         if (response.result == 'success') {
-          var url = 'http://localhost:8000/load?id='+response.id;
-          this.modalHeader = 'Your model url is:';
+          var url = 'http://localhost:8000/load?id=' + response.id;
+          this.modalHeader = 'Your model url is';
           this.modalContent = (<a href={url}>{url}</a>);
           this.openModal();
         }
@@ -874,7 +880,7 @@ class Content extends React.Component {
     }
   }
   loadDb(id) {
-    const socket = new WebSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
+    const socket = this.createSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
     this.setState({
       socket: socket ,
       load: true
