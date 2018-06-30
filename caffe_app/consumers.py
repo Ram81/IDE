@@ -3,7 +3,14 @@ import yaml
 import urlparse
 from channels import Group
 from channels.auth import channel_session_user, channel_session_user_from_http
-from caffe_app.models import Network
+from caffe_app.models import Network, NetworkVersion
+from datetime import datetime
+
+
+def create_network_version(network, netObj):
+    # creating a unique version of network to allow revert and view hitory
+    network_version = NetworkVersion(network=netObj, network_def=network)
+    network_version.save()
 
 
 @channel_session_user_from_http
@@ -30,15 +37,21 @@ def ws_disconnect(message):
 @channel_session_user
 def ws_receive(message):
     print('message received...')
+    # param initialization
     data = yaml.safe_load(message['text'])
     networkId = message.channel_session['networkId']
     net = data['net']
     action = data['action']
     nextLayerId = data['nextLayerId']
+
     # save changes to database to maintain consistency
+    # get the net object on which update is made
     netObj = Network.objects.get(id=int(networkId))
     # network object is stored as string in db, when loading it is parsed
-    netObj.network = json.dumps(net)
+    # create a new version of network in order to allow history support
+    create_network_version(json.dumps(net), netObj)
+    # modify last updated time
+    netObj.updated_on = datetime.now()
     netObj.save()
     # sending update made by one user over all the sessions of open network
     # Note - conflict resolution still pending
