@@ -122,10 +122,21 @@ class Content extends React.Component {
   }
   onSocketMessage(message) {
     // message received on socket
-    var data = JSON.parse(message['data']);
-    // console.log('Data received');
-    // console.log(data);
-    this.setState({ net: data['net'] })
+    let data = JSON.parse(message['data']);
+    let rebuildNet = false;
+    let nextLayerId = this.state.nextLayerId;
+
+    if (data['action'] == 'AddLayer') {
+      rebuildNet = true;
+    }
+    else if(data['action'] == 'DeleteLayer') {
+      nextLayerId = data['nextLayerId'];
+    }
+    this.setState({
+      net: data['net'],
+      rebuildNet: rebuildNet,
+      nextLayerId: nextLayerId
+    });
   }
   sendSocketMessage(message) {
     // generalized method to send message to socket
@@ -150,13 +161,15 @@ class Content extends React.Component {
       }, interval);
     }
   }
-  performSharedUpdate(net, action='update') {
+  performSharedUpdate(net, action='UpdateParam') {
     // method to handle pre-processing of message before sending
     // through a socket based on type of action, will be extended further
     // as per requirement of message types.
-    if (action == 'update') {
+    if (action == 'UpdateParam' || action == 'DeleteLayer' || action == 'AddLayer') {
       this.sendSocketMessage({
-        net: net
+        net: net,
+        nextLayerId: this.state.nextLayerId,
+        action: action
       });
     }
   }
@@ -195,7 +208,7 @@ class Content extends React.Component {
     this.setState({ net, nextLayerId: this.state.nextLayerId + 1, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
     if (this.state.isShared) {
-      this.performSharedUpdate(net);
+      this.performSharedUpdate(net, 'AddLayer');
     }
   }
   changeSelectedLayer(layerId) {
@@ -237,7 +250,7 @@ class Content extends React.Component {
     this.setState({ net: net, totalParameters: oldLayerParams });
     // if model is in RTC mode send updates to respective sockets
     if (this.state.isShared) {
-      this.performSharedUpdate(net);
+      this.performSharedUpdate(net, 'UpdateParam');
     }
   }
   modifyLayerParams(layer, layerId = this.state.selectedLayer) {
@@ -301,7 +314,7 @@ class Content extends React.Component {
       this.setState({ net });
       // if model is in RTC mode send updates to respective sockets
       if (this.state.isShared) {
-        this.performSharedUpdate(net);
+        this.performSharedUpdate(net, 'UpdateParam');
       }
     }
   }
@@ -327,7 +340,7 @@ class Content extends React.Component {
     this.setState({ net, selectedLayer: null, nextLayerId: nextLayerId, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
     if (this.state.isShared) {
-      this.performSharedUpdate(net);
+      this.performSharedUpdate(net, 'DeleteLayer');
     }
   }
 

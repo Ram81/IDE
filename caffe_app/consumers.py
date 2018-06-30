@@ -33,6 +33,8 @@ def ws_receive(message):
     data = yaml.safe_load(message['text'])
     networkId = message.channel_session['networkId']
     net = data['net']
+    action = data['action']
+    nextLayerId = data['nextLayerId']
     # save changes to database to maintain consistency
     netObj = Network.objects.get(id=int(networkId))
     # network object is stored as string in db, when loading it is parsed
@@ -42,6 +44,8 @@ def ws_receive(message):
     # Note - conflict resolution still pending
     Group('model-{0}'.format(networkId)).send({
         'text': json.dumps({
-            'net': net
+            'net': net,
+            'nextLayerId': nextLayerId,
+            'action': action
         })
     })
