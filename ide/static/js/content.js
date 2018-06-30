@@ -882,7 +882,7 @@ class Content extends React.Component {
       }
     );
     if ('id' in urlParams){
-      this.loadDb(urlParams['id'], urlParams['version']);
+      this.loadDb(urlParams['id']);
       this.waitForConnection (this.onSocketConnect, 1000);
       this.setState({
         isShared: true,
@@ -890,7 +890,7 @@ class Content extends React.Component {
       })
     }
   }
-  loadDb(id, version_id) {
+  loadDb(id) {
     const socket = this.createSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
     this.setState({
       socket: socket ,
