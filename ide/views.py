@@ -105,6 +105,7 @@ def save_to_db(request):
             model.save()
             # create first version of model
             model_version = NetworkVersion(network=model, network_def=net)
+            model_version.tag = 'Model created'
             model_version.save()
 
             return JsonResponse({'result': 'success', 'id': model.id})
@@ -120,7 +121,7 @@ def load_from_db(request):
                 model = Network.objects.get(id=int(request.POST['proto_id']))
                 version_id = None
 
-                if 'version_id' in request.POST:
+                if 'version_id' in request.POST and request.POST['version_id'] != '':
                     # added for loading any previous version of model
                     version_id = int(request.POST['version_id'])
                 else:
@@ -145,3 +146,26 @@ def load_from_db(request):
 
     if request.method == 'GET':
         return index(request)
+
+
+@csrf_exempt
+def fetch_model_history(request):
+    if request.method == 'POST':
+        try:
+            network_id = int(request.POST['net_id'])
+            network = Network.objects.get(id=network_id)
+            network_versions = NetworkVersion.objects.filter(network=network)
+
+            modelHistory = {}
+            for version in network_versions:
+                modelHistory[version.id] = version.tag
+
+            return JsonResponse({
+                'result': 'success',
+                'data': modelHistory
+            })
+        except Exception:
+            return JsonResponse({
+                'result': 'error',
+                'error': 'Unable to load model history'
+            })

@@ -17,8 +17,9 @@ class Network(models.Model):
 
 
 class NetworkVersion(models.Model):
-    network = models.ForeignKey(Network, blank=True, null=True)
+    network = models.ForeignKey(Network)
     network_def = JSONField()
+    tag = models.CharField(max_length=100)
 
     def __unicode__(self):
         return self.id
