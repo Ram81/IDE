@@ -236,10 +236,12 @@ class Canvas extends React.Component {
     event.preventDefault();
   }
   clickLayerEvent(event, layerId) { // happens when layer is clicked and also dragged
-    if (this.clickOrDraggedLayer === 0) {
-      this.props.changeSelectedLayer(layerId); // clicked
-    } else if (this.clickOrDraggedLayer === 1) {
-      this.clickOrDraggedLayer = 0; // dragged
+    if (event.target.tagName.toLowerCase() == 'div') {
+      if (this.clickOrDraggedLayer === 0) {
+        this.props.changeSelectedLayer(layerId); // clicked
+      } else if (this.clickOrDraggedLayer === 1) {
+        this.clickOrDraggedLayer = 0; // dragged
+      }
     }
     event.stopPropagation();
   }
