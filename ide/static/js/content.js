@@ -449,7 +449,7 @@ class Content extends React.Component {
   calculateParameters(net) {
     // Iterate over model's each layer & separately add the contribution of each layer
     var totalParameters = 0;
-    console.log(net);
+
     Object.keys(net).sort().forEach(layerId => {
       const layer = net[layerId];
       net[layerId]['info']['parameters'] = this.getLayerParameters(layer, net);

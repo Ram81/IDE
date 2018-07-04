@@ -7,15 +7,15 @@ class UpdateHistoryModal extends React.Component {
   render() {
     let data = [];
 
-    Object.keys(this.props.modelHistory).sort().reverse().forEach(versionId => {
+    Object.keys(this.props.modelHistory).sort().reverse().forEach((versionId, index) => {
       let url = 'http://localhost:8000/load?id=' + this.props.networkId + '&version=' + versionId;
-      let link = (<tr>
-                    <td>{versionId}</td>
+      let link = (<tr key={versionId}>
+                    <td>{index + 1}</td>
                     <td>
                       {this.props.modelHistory[versionId]}
                     </td>
                     <td>
-                      <a id={versionId} href={url} key={versionId}>
+                      <a id={versionId} href={url}>
                         <span className="glyphicon glyphicon-pencil" aria-hidden="true"></span>
                       </a>
                     </td>
