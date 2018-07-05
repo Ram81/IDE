@@ -421,7 +421,7 @@ class Canvas extends React.Component {
             left={layer.state.left}
             click={this.clickLayerEvent}
             hover={this.hoverLayerEvent}
-
+            layer={layer}
           />
         );
       }

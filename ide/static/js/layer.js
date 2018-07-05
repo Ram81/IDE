@@ -1,5 +1,6 @@
 import React from 'react';
 import data from './data';
+import CommentTooltip from './commentTooltip'
 
 class Layer extends React.Component {
   constructor(props) {
@@ -22,9 +23,15 @@ class Layer extends React.Component {
   }
   onAddComment(event, layerId) {
     //console.log('ola')
-    this.setState({ modalIsOpen: true, layerId: layerId })
+    this.setState({ modalIsOpen: true, layerId: layerId  })
   }
   render() {
+    let comments = [];
+    if (this.props.layer['comments']) {
+      for (var i=0;i<this.props.layer['comments'].length;i++) {
+        comments.push(<CommentTooltip key={i} comment={this.props.layer['comments'][i]} />);
+      }
+    }
     return (
       <div
         className={`layer ${this.props.class}`}
@@ -40,14 +47,12 @@ class Layer extends React.Component {
         data-tip='tooltip'
         data-for='getContent'
       >
-        <a style={{
-          position: 'absolute',
-          top: '-5px',
-          right: '-2px',
-          color: 'white'
-        }} onClick={(event) => this.onAddComment(event, this.props.id)}>
-          <span className="glyphicon glyphicon-plus-sign" style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true"></span>
-        </a>
+          <a style={{
+            color: 'white', position: 'absolute', top: '-5px', right: '-2px'}}
+            onClick={(event) => this.onAddComment(event, this.props.id)} data-event='click' data-for='getComment'>
+            <span className="glyphicon glyphicon-plus-sign" style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true"></span>
+          </a>
+          {comments}
         {data[this.props.type].name}
       </div>
     );
@@ -61,7 +66,8 @@ Layer.propTypes = {
   left: React.PropTypes.string.isRequired,
   class: React.PropTypes.string,
   click: React.PropTypes.func,
-  hover: React.PropTypes.func
+  hover: React.PropTypes.func,
+  layer: React.PropTypes.object
 };
 
 export default Layer;
