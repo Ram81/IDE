@@ -1,13 +1,8 @@
 import React from 'react';
-import ReactTooltip from 'react-tooltip'
 
 class CommentTooltip extends React.Component {
   constructor(props) {
     super(props);
-  }
-
-  componentDidUpdate() {
-    ReactTooltip.rebuild();
   }
 
   render() {

@@ -657,6 +657,19 @@ button.url-import-modal-button {
    opacity: 1;
 }
 
+
+.CommentTextarea {
+      width: 90%;
+      height: 100px;
+      padding: 12px 20px;
+      box-sizing: border-box;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      background-color: #f8f8f8;
+      resize: none;
+  }
+
+
 .layer{
   font-size: 22px;
   width: 130px;
