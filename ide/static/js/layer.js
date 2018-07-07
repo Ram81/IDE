@@ -31,6 +31,7 @@ class Layer extends React.Component {
     }
     this.onAddComment = this.onAddComment.bind(this);
     this.onCloseCommentModal = this.onCloseCommentModal.bind(this);
+    this.doSharedUpdate = this.doSharedUpdate.bind(this);
   }
   componentDidMount() {
     instance.addLayerEndpoints(this.props.id,
@@ -42,22 +43,38 @@ class Layer extends React.Component {
     instance.deleteEndpoint(`${this.props.id}-s0`);
     instance.deleteEndpoint(`${this.props.id}-t0`);
   }
+  onCloseCommentModal(event) {
+    this.setState({ addModalIsOpen: false})
+    event.stopPropagation();
+  }
   onAddComment(event, layerId) {
     this.setState({ addModalIsOpen: true, layerId: layerId  })
     this.modalHeader = 'Comment on layer ' + layerId;
-    this.modalContent = (<AddCommentTooltip layer={this.props.layer} />);
+    this.modalContent = (<AddCommentTooltip
+                            layer={this.props.layer}
+                            onCloseCommentModal={this.onCloseCommentModal}
+                            doSharedUpdate={this.doSharedUpdate}/>);
     event.stopPropagation();
   }
-  onCloseCommentModal(event) {
-    this.setState({ addModalIsOpen: false})
-    event.stopePropagation();
+  doSharedUpdate() {
+    this.props.performSharedUpdate(this.props.net, 'AddComment');
   }
   render() {
     let comments = [];
+    let commentButton = null;
     if (this.props.layer['comments']) {
       for (var i=0;i<this.props.layer['comments'].length;i++) {
         comments.push(<CommentTooltip key={i} comment={this.props.layer['comments'][i]} />);
       }
+    }
+
+    if (this.props.isShared) {
+      commentButton = (<a style={{color: 'white', position: 'absolute', top: '-5px', right: '-2px'}}
+                          onClick={(event) => this.onAddComment(event, this.props.id)}>
+                            <span className="glyphicon glyphicon-plus-sign"
+                                  style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true">
+                            </span>
+                        </a>);
     }
     return (
       <div
@@ -74,11 +91,7 @@ class Layer extends React.Component {
         data-tip='tooltip'
         data-for='getContent'
       >
-          <a style={{
-            color: 'white', position: 'absolute', top: '-5px', right: '-2px'}}
-            onClick={(event) => this.onAddComment(event, this.props.id)}>
-            <span className="glyphicon glyphicon-plus-sign" style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true"></span>
-          </a>
+          {commentButton}
           {comments}
           <Modal
             isOpen={this.state.addModalIsOpen}
@@ -103,7 +116,10 @@ Layer.propTypes = {
   class: React.PropTypes.string,
   click: React.PropTypes.func,
   hover: React.PropTypes.func,
-  layer: React.PropTypes.object
+  layer: React.PropTypes.object,
+  net: React.PropTypes.object,
+  performSharedUpdate: React.PropTypes.func,
+  isShared: React.PropTypes.bool
 };
 
 export default Layer;

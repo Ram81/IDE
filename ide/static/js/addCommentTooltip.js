@@ -3,21 +3,18 @@ import React from 'react';
 class AddCommentTooltip extends React.Component {
   constructor(props) {
     super(props);
-    this.onEnterPress = this.onEnterPress.bind(this);
-    this.onCommentChange = this.onCommentChange.bind(this);
+    this.addComment = this.addComment.bind(this);
   }
 
-  onEnterPress(event) {
-    if(event.keyCode == 13 && event.shiftKey == false) {
-      event.preventDefault();
-      this.props.layer['comments'].push(this.refs.comment);
+  addComment(event) {
+    if (!('comments' in this.props.layer)) {
+      this.props.layer['comments'] = [];
     }
+    this.props.layer['comments'].push(this.refs.comment.value);
+    this.props.onCloseCommentModal(event);
+    this.props.doSharedUpdate();
   }
 
-  onCommentChange(event) {
-    this.setState({comment: event.target.value});
-  }
-  
   render() {
       return (
         <div style={{ textAlign: 'left', color: "#000"}}>
@@ -26,13 +23,13 @@ class AddCommentTooltip extends React.Component {
               <img src={'/static/img/user.png'} className="img-responsive" alt="user" height="40px" width="40px"/>
             </div>
             <div className="col-md-10" style={{ padding: '0px'}}>
-              <textarea className="CommentTextarea" placeholder="Add your comment here...">
+              <textarea ref="comment" className="CommentTextarea" placeholder="Add your comment here...">
               </textarea>
             </div>
           </div>
           <div className="row" style={{ paddingLeft: '20px', paddingTop: '10px'}}>
             <div className="col-md-4 col-md-offset-8" style={{padding: '0px', textAlign: 'left', paddingLeft: '6px' }}>
-              <button className="btn btn-success text-center" id='btn-comment' disabled={this.disableZoom}>
+              <button className="btn btn-success text-center" id='btn-comment' onClick={this.addComment}>
                   <span className="glyphicon glyphicon-comment" aria-hidden="true"></span> Comment
               </button>
             </div>
@@ -43,7 +40,9 @@ class AddCommentTooltip extends React.Component {
 }
 
 AddCommentTooltip.propTypes = {
-  layer: React.PropTypes.object
+  layer: React.PropTypes.object,
+  onCloseCommentModal: React.PropTypes.func,
+  doSharedUpdate: React.PropTypes.func
 };
 
 export default AddCommentTooltip;

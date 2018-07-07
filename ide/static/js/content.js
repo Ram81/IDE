@@ -163,7 +163,7 @@ class Content extends React.Component {
       }, interval);
     }
   }
-  performSharedUpdate(net, action='UpdateParam', nextLayerId) {
+  performSharedUpdate(net, action='UpdateParam', nextLayerId=this.state.nextLayerId) {
     // method to handle pre-processing of message before sending
     // through a socket based on type of action, will be extended further
     // as per requirement of message types.
@@ -174,9 +174,13 @@ class Content extends React.Component {
     else if (action == 'AddLayer') {
       msg = 'New layer added'
     }
-    else {
+    else if (action == 'DeleteLayer') {
       msg = 'Existing layer deleted'
     }
+    else {
+      msg = 'Add a new comment'
+    }
+
     this.sendSocketMessage({
       net: net,
       nextLayerId: nextLayerId,
@@ -512,6 +516,10 @@ class Content extends React.Component {
     this.exportPrep(function(netData) {
       Object.keys(netData).forEach(layerId => {
         delete netData[layerId].state;
+        if (netData[layerId]['comments']) {
+          // not adding comments as part of export parameters of net
+          delete netData[layerId].comments;
+        }
       });
 
       const url = {'caffe': '/caffe/export', 'keras': '/keras/export', 'tensorflow': '/tensorflow/export'}
@@ -1188,6 +1196,9 @@ class Content extends React.Component {
             draggingLayer={this.state.draggingLayer}
             setDraggingLayer={this.setDraggingLayer}
             selectedLayer={this.state.selectedLayer}
+            socket={this.state.socket}
+            performSharedUpdate={this.performSharedUpdate}
+            isShared={this.state.isShared}
           />
           <SetParams
             net={this.state.net}
