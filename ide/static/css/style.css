@@ -625,8 +625,6 @@ button.url-import-modal-button {
 
    /* Position the tooltip text */
    position: absolute;
-   z-index: 1;
-   top: 0%;
    right: -170px;
    margin-left: -60px;
    font-size: 12px;
@@ -658,10 +656,50 @@ button.url-import-modal-button {
 }
 
 
+/* Tooltip text */
+.addCommentTooltiptext {
+   visibility: hidden;
+   width: 245px;
+   height: auto;
+   background-color: #555;
+   color: #fff;
+   padding: 5px 0;
+
+   /* Position the tooltip text */
+   position: absolute;
+   right: -255px;
+   font-size: 12px;
+
+   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+   transition: 0.3s;
+}
+
+.addCommentTooltiptext:hover {
+    box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
+}
+
+/* Tooltip arrow */
+.addCommentTooltiptext::after {
+   content: "";
+   position: absolute;
+   top: 10%;
+   left: -10px;
+   margin-left: -5px;
+   border-width: 8px;
+   border-style: solid;
+   border-color: transparent #555 transparent transparent;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.addCommentTooltiptext {
+   visibility: visible;
+   opacity: 1;
+}
+
 .CommentTextarea {
       width: 90%;
-      height: 100px;
-      padding: 12px 20px;
+      height: 85px;
+      padding: 7px 14px;
       box-sizing: border-box;
       border: 2px solid #ccc;
       border-radius: 4px;

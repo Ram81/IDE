@@ -2,8 +2,8 @@ import React from 'react';
 import data from './data';
 import CommentTooltip from './commentTooltip'
 import AddCommentTooltip from './addCommentTooltip'
-import Modal from 'react-modal';
-
+//import Modal from 'react-modal';
+/*
 const infoStyle = {
   content : {
     top                   : '50%',
@@ -20,7 +20,7 @@ const infoStyle = {
   overlay: {
     zIndex                : 100
   }
-};
+};*/
 
 class Layer extends React.Component {
   constructor(props) {
@@ -48,9 +48,10 @@ class Layer extends React.Component {
     event.stopPropagation();
   }
   onAddComment(event, layerId) {
+    // open the comment tooltip
     this.setState({ addModalIsOpen: true, layerId: layerId  })
-    this.modalHeader = 'Comment on layer ' + layerId;
-    this.modalContent = (<AddCommentTooltip
+    //this.modalHeader = 'Comment on layer ' + layerId;
+    this.addCommentTooltip = (<AddCommentTooltip
                             layer={this.props.layer}
                             onCloseCommentModal={this.onCloseCommentModal}
                             doSharedUpdate={this.doSharedUpdate}/>);
@@ -64,14 +65,18 @@ class Layer extends React.Component {
     let commentButton = null;
     if (this.props.layer['comments']) {
       for (var i=0;i<this.props.layer['comments'].length;i++) {
-        comments.push(<CommentTooltip key={i} comment={this.props.layer['comments'][i]} />);
+        comments.push(<CommentTooltip
+                          key={i}
+                          comment={this.props.layer['comments'][i]}
+                          top={this.props.top}
+                          index={i}/>);
       }
     }
 
     if (this.props.isShared) {
-      commentButton = (<a style={{color: 'white', position: 'absolute', top: '-5px', right: '-2px'}}
+      commentButton = (<a style={{color: 'white', position: 'absolute', top: '-5px', right: '-1px'}}
                           onClick={(event) => this.onAddComment(event, this.props.id)}>
-                            <span className="glyphicon glyphicon-plus-sign"
+                            <span className="glyphicon glyphicon-comment"
                                   style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true">
                             </span>
                         </a>);
@@ -93,15 +98,7 @@ class Layer extends React.Component {
       >
           {commentButton}
           {comments}
-          <Modal
-            isOpen={this.state.addModalIsOpen}
-            onRequestClose={this.onCloseCommentModal}
-            style={infoStyle}
-            contentLabel="Modal">
-            <button type="button" style={{padding: 5+'px'}} className="close" onClick={this.onCloseCommentModal}>&times;</button>
-            <h4 style={{color: '#fff'}}>{ this.modalHeader }</h4>
-            { this.modalContent }
-          </Modal>
+            { this.addCommentTooltip }
         {data[this.props.type].name}
       </div>
     );

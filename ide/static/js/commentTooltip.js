@@ -6,8 +6,11 @@ class CommentTooltip extends React.Component {
   }
 
   render() {
+    let top=0;//parseInt(this.props.top.split('px')[0]);
+    top += (this.props.index*60);
+    top = top.toString() + 'px';
       return (
-        <div className="commentTooltiptext">
+        <div className="commentTooltiptext" style={{ top: top }}>
           <div className="row" style={{ paddingLeft: '20px'}}>
             <div className="col-md-2" style={{padding: '0px', paddingLeft: '6px'}}>
               <img src={'/static/img/user.png'} className="img-responsive" alt="user" height="20px" width="20px"/>
@@ -25,7 +28,9 @@ class CommentTooltip extends React.Component {
 }
 
 CommentTooltip.propTypes = {
-  comment: React.PropTypes.string
+  comment: React.PropTypes.string.isRequired,
+  top: React.PropTypes.string.isRequired,
+  index: React.PropTypes.number.isRequired
 };
 
 export default CommentTooltip;
