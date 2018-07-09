@@ -1,7 +1,7 @@
 import React from 'react';
 import data from './data';
 import CommentTooltip from './commentTooltip'
-import AddCommentTooltip from './addCommentTooltip'
+import AddCommentModal from './addCommentModal'
 //import Modal from 'react-modal';
 /*
 const infoStyle = {
@@ -26,8 +26,7 @@ class Layer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      addModalIsOpen: false,
-      layerId: 0
+      addCommentModalIsOpen: false
     }
     this.onAddComment = this.onAddComment.bind(this);
     this.onCloseCommentModal = this.onCloseCommentModal.bind(this);
@@ -44,17 +43,12 @@ class Layer extends React.Component {
     instance.deleteEndpoint(`${this.props.id}-t0`);
   }
   onCloseCommentModal(event) {
-    this.setState({ addModalIsOpen: false})
+    this.setState({ addCommentModalIsOpen: false})
     event.stopPropagation();
   }
-  onAddComment(event, layerId) {
+  onAddComment(event) {
     // open the comment tooltip
-    this.setState({ addModalIsOpen: true, layerId: layerId  })
-    //this.modalHeader = 'Comment on layer ' + layerId;
-    this.addCommentTooltip = (<AddCommentTooltip
-                            layer={this.props.layer}
-                            onCloseCommentModal={this.onCloseCommentModal}
-                            doSharedUpdate={this.doSharedUpdate}/>);
+    this.setState({ addCommentModalIsOpen: true })
     event.stopPropagation();
   }
   doSharedUpdate() {
@@ -62,6 +56,7 @@ class Layer extends React.Component {
   }
   render() {
     let comments = [];
+    let addCommentModal = null;
     let commentButton = null;
     if (this.props.layer['comments']) {
       for (var i=0;i<this.props.layer['comments'].length;i++) {
@@ -72,10 +67,16 @@ class Layer extends React.Component {
                           index={i}/>);
       }
     }
+    if (this.state.addCommentModalIsOpen) {
+      addCommentModal = (<AddCommentModal
+                                  layer={this.props.layer}
+                                  onCloseCommentModal={this.onCloseCommentModal}
+                                  doSharedUpdate={this.doSharedUpdate}/>);
+    }
 
     if (this.props.isShared) {
       commentButton = (<a style={{color: 'white', position: 'absolute', top: '-5px', right: '-1px'}}
-                          onClick={(event) => this.onAddComment(event, this.props.id)}>
+                          onClick={(event) => this.onAddComment(event)}>
                             <span className="glyphicon glyphicon-comment"
                                   style={{ fontSize: '15px', paddingRight: '5px'}} aria-hidden="true">
                             </span>
@@ -98,7 +99,7 @@ class Layer extends React.Component {
       >
           {commentButton}
           {comments}
-            { this.addCommentTooltip }
+          { addCommentModal }
         {data[this.props.type].name}
       </div>
     );

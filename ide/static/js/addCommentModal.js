@@ -1,6 +1,6 @@
 import React from 'react';
 
-class AddCommentTooltip extends React.Component {
+class AddCommentModal extends React.Component {
   constructor(props) {
     super(props);
     this.addComment = this.addComment.bind(this);
@@ -27,7 +27,12 @@ class AddCommentTooltip extends React.Component {
             </div>
           </div>
           <div className="row" style={{ paddingTop: '5px',paddingLeft: '15px', paddingRight: '20px'}}>
-            <div className="col-md-12" style={{padding: '0px', textAlign: 'left', float: 'right' }}>
+            <div className="col-md-2">
+              <button onClick={this.props.onCloseCommentModal}>
+                  <span className="glyphicon glyphicon-remove" style={{color: '#fff', fontSize: '18px', paddingTop: '8px'}} aria-hidden="true"></span>
+              </button>
+            </div>
+            <div className="col-md-8" style={{padding: '0px', textAlign: 'left', float: 'right' }}>
               <button className="btn btn-success text-center pull-right" id='btn-comment' onClick={this.addComment}>
                   <span className="glyphicon glyphicon-comment" aria-hidden="true"></span> Comment
               </button>
@@ -38,10 +43,10 @@ class AddCommentTooltip extends React.Component {
   }
 }
 
-AddCommentTooltip.propTypes = {
+AddCommentModal.propTypes = {
   layer: React.PropTypes.object,
   onCloseCommentModal: React.PropTypes.func,
   doSharedUpdate: React.PropTypes.func
 };
 
-export default AddCommentTooltip;
+export default AddCommentModal;

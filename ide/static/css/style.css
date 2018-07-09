@@ -627,6 +627,7 @@ button.url-import-modal-button {
    position: absolute;
    right: -170px;
    margin-left: -60px;
+   z-index: 2;
    font-size: 12px;
 
    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
@@ -637,17 +638,6 @@ button.url-import-modal-button {
     box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2);
 }
 
-/* Tooltip arrow */
-.commentTooltiptext::after {
-   content: "";
-   position: absolute;
-   top: 25%;
-   left: -10px;
-   margin-left: -5px;
-   border-width: 8px;
-   border-style: solid;
-   border-color: transparent #555 transparent transparent;
-}
 
 /* Show the tooltip text when you mouse over the tooltip container */
 .commentTooltiptext {
@@ -659,7 +649,7 @@ button.url-import-modal-button {
 /* Tooltip text */
 .addCommentTooltiptext {
    visibility: hidden;
-   width: 245px;
+   width: 250px;
    height: auto;
    background-color: #555;
    color: #fff;
@@ -668,6 +658,7 @@ button.url-import-modal-button {
    /* Position the tooltip text */
    position: absolute;
    right: -255px;
+   z-index: 9999;
    font-size: 12px;
 
    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
