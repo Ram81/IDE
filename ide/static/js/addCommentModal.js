@@ -4,6 +4,10 @@ class AddCommentModal extends React.Component {
   constructor(props) {
     super(props);
     this.addComment = this.addComment.bind(this);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  handleClick() {
+    this.refs.comment.focus();
   }
   addComment(event) {
     if (!('comments' in this.props.layer)) {
@@ -22,7 +26,7 @@ class AddCommentModal extends React.Component {
               <img src={'/static/img/user.png'} className="img-responsive" alt="user" height="40px" width="40px"/>
             </div>
             <div className="col-md-10" style={{ padding: '0px', paddingLeft: '10px'}}>
-              <textarea ref="comment" className="CommentTextarea" placeholder="Add your comment here...">
+              <textarea ref="comment" className="CommentTextarea" placeholder="Add your comment here..."  onClick={this.handleClick}>
               </textarea>
             </div>
           </div>
