@@ -8,8 +8,6 @@ class CommentTooltip extends React.Component {
     }
     this.handleClick = this.handleClick.bind(this);
     this.addComment = this.addComment.bind(this);
-    this.openCommentModal = this.openCommentModal.bind(this);
-    this.closeCommentModal = this.closeCommentModal.bind(this);
   }
   handleClick() {
     this.refs.comment_1.focus();
@@ -17,16 +15,6 @@ class CommentTooltip extends React.Component {
   addComment() {
     this.props.comments.push(this.refs.comment_1.value);
     this.props.doSharedUpdate();
-  }
-  openCommentModal() {
-      this.setState({
-        isModalOpen: true
-      });
-  }
-  closeCommentModal() {
-    this.setState({
-      isModalOpen: false
-    });
   }
   render() {
     let top=0;
@@ -48,7 +36,7 @@ class CommentTooltip extends React.Component {
                                   </div>
                                   <div className="row">
                                     <div className="col-md-5 col-md-offset-5" style={{padding: '0px', textAlign: 'right'}}>
-                                      <a style={{color: 'white'}} onClick={this.openCommentModal}>
+                                      <a style={{color: 'white'}} onClick={this.props.openCommentSidebar}>
                                         <span className="glyphicon glyphicon-retweet"
                                             style={{ fontSize: '15px'}} aria-hidden="true">
                                         </span>
@@ -78,31 +66,6 @@ class CommentTooltip extends React.Component {
             </div>
           );
         }
-          singleCommentTooltip = (
-            <div className="commentTooltipModal" style={{ top: top }}>
-              {commentDiv}
-              <div className="row" style={{ paddingTop: '5px'}}>
-                <div className="col-md-12" style={{ padding: '0px', paddingLeft: '17px', paddingRight: '15px', color: 'black'}}>
-                  <textarea ref="comment_1" className="CommentModalTextarea" placeholder="Add your comment here..."  onClick={this.handleClick}>
-                  </textarea>
-                </div>
-              </div>
-              <div className="row" style={{ paddingTop: '5px', paddingLeft: '15px', paddingRight: '20px'}}>
-                <div className="col-md-2">
-                  <button onClick={this.closeCommentModal}>
-                      <span className="glyphicon glyphicon-remove"
-                            style={{color: '#fff', fontSize: '18px', paddingTop: '8px'}} aria-hidden="true">
-                      </span>
-                  </button>
-                </div>
-                <div className="col-md-8" style={{padding: '0px', textAlign: 'left', float: 'right', paddingRight: '5px' }}>
-                  <button className="btn btn-success text-center pull-right" id='btn-comment' onClick={this.addComment}>
-                      <span className="glyphicon glyphicon-comment" aria-hidden="true"></span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
       }
 
       return (
@@ -116,7 +79,8 @@ class CommentTooltip extends React.Component {
 CommentTooltip.propTypes = {
   comments: React.PropTypes.array.isRequired,
   top: React.PropTypes.string.isRequired,
-  doSharedUpdate: React.PropTypes.func.isRequired
+  doSharedUpdate: React.PropTypes.func.isRequired,
+  openCommentSidebar: React.PropTypes.func
 };
 
 export default CommentTooltip;

@@ -12,6 +12,7 @@ class Layer extends React.Component {
     this.onAddComment = this.onAddComment.bind(this);
     this.onCloseCommentModal = this.onCloseCommentModal.bind(this);
     this.doSharedUpdate = this.doSharedUpdate.bind(this);
+    this.openCommentSidebar = this.openCommentSidebar.bind(this);
   }
   componentDidMount() {
     instance.addLayerEndpoints(this.props.id,
@@ -35,6 +36,9 @@ class Layer extends React.Component {
   doSharedUpdate() {
     this.props.performSharedUpdate(this.props.net, 'AddComment');
   }
+  openCommentSidebar() {
+    this.props.changeCommentOnLayer(this.props.id);
+  }
   render() {
     let comments = [];
     let addCommentModal = null;
@@ -44,6 +48,7 @@ class Layer extends React.Component {
                           comments={this.props.layer['comments']}
                           top={this.props.top}
                           doSharedUpdate = {this.doSharedUpdate}
+                          openCommentSidebar = {this.openCommentSidebar}
                           />);
     }
     if (this.state.addCommentModalIsOpen) {
@@ -96,7 +101,8 @@ Layer.propTypes = {
   layer: React.PropTypes.object,
   net: React.PropTypes.object,
   performSharedUpdate: React.PropTypes.func,
-  isShared: React.PropTypes.bool
+  isShared: React.PropTypes.bool,
+  changeCommentOnLayer: React.PropTypes.func
 };
 
 export default Layer;
