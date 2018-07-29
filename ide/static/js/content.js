@@ -54,7 +54,8 @@ class Content extends React.Component {
       modelConfig: null,
       modelFramework: 'caffe',
       isShared: false,
-      socket: null
+      socket: null,
+      randomUserId: null
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -104,12 +105,17 @@ class Content extends React.Component {
     this.onSocketError = this.onSocketError.bind(this);
     this.waitForConnection = this.waitForConnection.bind(this);
     this.setUserId = this.setUserId.bind(this);
+    this.getUserId = this.getUserId.bind(this);
     this.modalContent = null;
     this.modalHeader = null;
     // Might need to improve the logic of clickEvent
     this.clickEvent = false;
     this.handleClick = this.handleClick.bind(this);
     this.performSharedUpdate = this.performSharedUpdate.bind(this);
+    this.performSharedAdd = this.performSharedAdd.bind(this);
+    this.performSharedDelete = this.performSharedDelete.bind(this);
+    this.addHighlightOnLayer = this.addHighlightOnLayer.bind(this);
+    this.addSharedComment = this.addSharedComment.bind(this);
     this.changeCommentOnLayer = this.changeCommentOnLayer.bind(this);
   }
   createSocket(url) {
@@ -129,19 +135,47 @@ class Content extends React.Component {
   onSocketMessage(message) {
     // message received on socket
     let data = JSON.parse(message['data']);
-    let rebuildNet = false;
-    let nextLayerId = this.state.nextLayerId;
+    //let rebuildNet = false;
+    //let nextLayerId = this.state.nextLayerId;
+    const net = this.state.net;
 
-    if (data['action'] == 'AddLayer') {
-      rebuildNet = true;
+    if(data['action'] == 'UpdateHighlight') {
+      if (data['addHighlightTo'] != null)
+        net[data['addHighlightTo']]['highlight'] = true;
+      if (data['removeHighlightFrom'] != null)
+        net[data['removeHighlightFrom']]['highlight'] = false;
+
+      this.setState({
+        net: net
+      });
     }
-    nextLayerId = data['nextLayerId'];
-
-    this.setState({
-      net: data['net'],
-      rebuildNet: rebuildNet,
-      nextLayerId: nextLayerId
-    });
+    else {
+      if (data['randomId'] != this.state.randomId) {
+        if(data['action'] == 'UpdateParam') {
+          if (data['isProp']) {
+            net[data['layerId']]['props'][data['param']] = data['value'];
+          }
+          else {
+            net[data['layerId']]['params'][data['param']][0] = data['value'];
+          }
+          this.setState({ net: net });
+        }
+        else if (data['action'] == 'AddLayer') {
+          this.addNewLayer(data['layer'], data['prevLayerId'], false);
+          this.changeNetStatus(true);
+        }
+        else if(data['action'] == 'DeleteLayer') {
+          this.deleteLayer(data['layerId'], false);
+        }
+        else if(data['action'] == 'AddComment') {
+          if (('comments' in net[data['layerId']]) == false) {
+            net[data['layerId']]['comments'] = [];
+          }
+          net[data['layerId']]['comments'].push(data['comment']);
+          this.setState({ net });
+        }
+      }
+    }
   }
   sendSocketMessage(message) {
     // generalized method to send message to socket
@@ -150,7 +184,6 @@ class Content extends React.Component {
   }
   onSocketError(error) {
     // socket error handling goes here
-    //console.log('Socket error, disconnected....' + error);
     this.addError(error);
   }
   waitForConnection(callback, interval=100) {
@@ -166,30 +199,60 @@ class Content extends React.Component {
       }, interval);
     }
   }
-  performSharedUpdate(net, action='UpdateParam', nextLayerId=this.state.nextLayerId) {
+  performSharedUpdate(layerId, param, value, isProp) {
     // method to handle pre-processing of message before sending
     // through a socket based on type of action, will be extended further
     // as per requirement of message types.
     let msg = '';
-    if(action == 'UpdateParam') {
-      msg = 'Layer parameter updated';
-    }
-    else if (action == 'AddLayer') {
-      msg = 'New layer added'
-    }
-    else if (action == 'DeleteLayer') {
-      msg = 'Existing layer deleted'
-    }
-    else {
-      msg = 'Add a new comment'
-    }
+    msg = 'Layer parameter updated';
 
     this.sendSocketMessage({
-      net: net,
-      nextLayerId: nextLayerId,
-      action: action,
-      message: msg
+      layerId: layerId,
+      param: param,
+      value: value,
+      isProp: isProp,
+      action: 'UpdateParam',
+      message: msg,
+      randomId: this.state.randomId
     });
+  }
+  performSharedAdd(layer, prevLayerId) {
+    let  msg = 'New layer added';
+
+    this.sendSocketMessage({
+      layer: layer,
+      prevLayerId: prevLayerId,
+      action: 'AddLayer',
+      message: msg,
+      randomId: this.state.randomId
+    })
+  }
+  performSharedDelete(net, layerId) {
+    let  msg = 'Delete existing layer';
+
+    this.sendSocketMessage({
+      layerId: layerId,
+      action: 'DeleteLayer',
+      message: msg,
+      randomId: this.state.randomId
+    })
+  }
+  addHighlightOnLayer(layerId, previousLayerId) {
+    this.sendSocketMessage({
+      addHighlightTo: layerId,
+      removeHighlightFrom: previousLayerId,
+      userId: this.getUserId(),
+      action: 'UpdateHighlight',
+      randomId: this.state.randomId
+    })
+  }
+  addSharedComment(layerId, comment) {
+    this.sendSocketMessage({
+      layerId: layerId,
+      comment: comment,
+      action: 'AddComment',
+      randomId: this.state.randomId
+    })
   }
   openModal() {
     this.setState({ modalIsOpen: true });
@@ -200,10 +263,24 @@ class Content extends React.Component {
   setUserId(user_id) {
     UserProfile.setUserId(user_id);
   }
-  addNewLayer(layer) {
+  getUserId() {
+    return UserProfile.getUserId();
+  }
+  addNewLayer(layer, prevLayerId, publishUpdate=true) {
     const net = this.state.net;
     const layerId = `l${this.state.nextLayerId}`;
     var totalParameters = this.state.totalParameters;
+    // shared addition of layer connections
+    if (publishUpdate == false) {
+      if (Array.isArray(prevLayerId)) {
+        for (var i=0;i<prevLayerId.length;i++) {
+          net[prevLayerId]['connection']['output'].push(prevLayerId[i]);
+        }
+      }
+      else
+        net[prevLayerId]['connection']['output'].push(layerId);
+    }
+
     net[layerId] = layer;
     // Parsing for integer parameters when new layers are added as by default all params are string
     // In case some parameters are missed please cover them too
@@ -225,8 +302,8 @@ class Content extends React.Component {
     }
     this.setState({ net, nextLayerId: this.state.nextLayerId + 1, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
-    if (this.state.isShared) {
-      this.performSharedUpdate(net, 'AddLayer', (this.state.nextLayerId + 1));
+    if (this.state.isShared && publishUpdate) {
+      this.performSharedAdd(net[layerId], prevLayerId);
     }
   }
   changeCommentOnLayer(layerId) {
@@ -244,6 +321,7 @@ class Content extends React.Component {
       // css when layer is selected
       net[layerId].info.class = 'selected';
     }
+    this.addHighlightOnLayer(layerId, this.state.selectedLayer);
     this.setState({ net, selectedLayer: layerId });
   }
   changeHoveredLayer(layerId) {
@@ -271,10 +349,6 @@ class Content extends React.Component {
       oldLayerParams += net[layerId]['info']['parameters'];
     }
     this.setState({ net: net, totalParameters: oldLayerParams });
-    // if model is in RTC mode send updates to respective sockets
-    if (this.state.isShared) {
-      this.performSharedUpdate(net, 'UpdateParam', this.state.nextLayerId);
-    }
   }
   modifyLayerParams(layer, layerId = this.state.selectedLayer) {
     const net = this.state.net;
@@ -326,22 +400,20 @@ class Content extends React.Component {
         net[outputId].connection.input.push(nextLayerId);
       });
 
+      const inputIds = [];
       (trainLayer.connection.input).forEach(inputId => {
         net[inputId].connection.output.push(nextLayerId);
+        inputIds.push(inputId)
       });
 
-      this.addNewLayer(trainLayer);
+      this.addNewLayer(trainLayer, inputIds);
       // if model is in RTC mode addNewLayer will send updates to respective sockets
     } else {
       net[layerId] = layer;
       this.setState({ net });
-      // if model is in RTC mode send updates to respective sockets
-      if (this.state.isShared) {
-        this.performSharedUpdate(net, 'UpdateParam', this.state.nextLayerId);
-      }
     }
   }
-  deleteLayer(layerId) {
+  deleteLayer(layerId, publishUpdate=true) {
     const net = this.state.net;
     const input = net[layerId].connection.input;
     const output = net[layerId].connection.output;
@@ -362,8 +434,9 @@ class Content extends React.Component {
     });
     this.setState({ net, selectedLayer: null, nextLayerId: nextLayerId, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
-    if (this.state.isShared) {
-      this.performSharedUpdate(net, 'DeleteLayer', nextLayerId);
+    // to avoid infinite loop of deletion over multiple session
+    if (this.state.isShared && publishUpdate == true) {
+      this.performSharedDelete(net, layerId);
     }
   }
 
@@ -882,7 +955,7 @@ class Content extends React.Component {
       data: {
         net: JSON.stringify(netData),
         net_name: this.state.net_name,
-        user_id: UserProfile.getUserId()
+        user_id: this.getUserId()
       },
       success : function (response) {
         if (response.result == 'success') {
@@ -902,22 +975,23 @@ class Content extends React.Component {
     });
   }
   componentWillMount(){
-    var url = window.location.href;
+    var url = window.location.href.split('#');
     var urlParams = {};
-    url = url.split('#')[0];
+    let randomId = url[1];
+    url = url[0];
     url.replace(
     new RegExp("([^?=&]+)(=([^&]*))?", "g"),
     function($0, $1, $2, $3) {
       urlParams[$1] = $3;
       }
     );
-
     if ('id' in urlParams){
       if ('version' in urlParams) {
         this.loadDb(urlParams['id'], urlParams['version']);
         this.setState({
           isShared: true,
-          networkId: parseInt(urlParams['id'])
+          networkId: parseInt(urlParams['id']),
+          randomId: randomId
         });
       }
       else {
@@ -925,7 +999,8 @@ class Content extends React.Component {
         this.waitForConnection (this.onSocketConnect, 1000);
         this.setState({
           isShared: true,
-          networkId: parseInt(urlParams['id'])
+          networkId: parseInt(urlParams['id']),
+          randomId: randomId
         });
       }
     }
@@ -1072,7 +1147,8 @@ class Content extends React.Component {
     const net = this.state.net;
     // extracting layerId from Pane id which is in form LayerName_Button
     const id = event.target.id.split('_')[0];
-    const prev = net[`l${this.state.nextLayerId-1}`];
+    const prevLayerId = 'l' + (this.state.nextLayerId - 1);
+    const prev = net[prevLayerId];
     const next = data[id];
     const zoom = instance.getZoom();
     const layer = {};
@@ -1102,7 +1178,7 @@ class Content extends React.Component {
         layer.props.name = `${next.name}${this.state.nextLayerId}`;
         prev.connection.output.push(`l${this.state.nextLayerId}`);
         layer.connection.input.push(`l${this.state.nextLayerId-1}`);
-        this.addNewLayer(layer);
+        this.addNewLayer(layer, prevLayerId);
     }
 
     else if (Object.keys(net).length == 0) { // if there are no layers
@@ -1205,7 +1281,7 @@ class Content extends React.Component {
             setDraggingLayer={this.setDraggingLayer}
             selectedLayer={this.state.selectedLayer}
             socket={this.state.socket}
-            performSharedUpdate={this.performSharedUpdate}
+            addSharedComment={this.addSharedComment}
             isShared={this.state.isShared}
             changeCommentOnLayer={this.changeCommentOnLayer}
           />
@@ -1220,12 +1296,13 @@ class Content extends React.Component {
             copyTrain={this.copyTrain}
             trainOnly={this.trainOnly}
             updateLayerWithShape={this.modifyLayer}
+            performSharedUpdate={this.performSharedUpdate}
           />
           <CommentSidebar
             net={this.state.net}
             commentOnLayer={this.state.commentOnLayer}
             changeCommentOnLayer={this.changeCommentOnLayer}
-            performSharedUpdate={this.performSharedUpdate}
+            addSharedComment={this.addSharedComment}
           />
           <Tooltip
             id={'tooltip_text'}

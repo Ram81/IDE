@@ -33,8 +33,8 @@ class Layer extends React.Component {
     this.setState({ addCommentModalIsOpen: true })
     event.stopPropagation();
   }
-  doSharedUpdate() {
-    this.props.performSharedUpdate(this.props.net, 'AddComment');
+  doSharedUpdate(comment) {
+    this.props.addSharedComment(this.props.id, comment);
   }
   openCommentSidebar() {
     this.props.changeCommentOnLayer(this.props.id);
@@ -43,6 +43,7 @@ class Layer extends React.Component {
     let comments = [];
     let addCommentModal = null;
     let commentButton = null;
+    let highlightClass = this.props.layer.highlight ? 'highlighted' : '';
     if ('comments' in this.props.layer && this.props.layer['comments'].length > 0) {
       comments = (<CommentTooltip
                           comments={this.props.layer['comments']}
@@ -68,7 +69,7 @@ class Layer extends React.Component {
     }
     return (
       <div
-        className={`layer ${this.props.class}`}
+        className={`layer ${this.props.class} ${highlightClass}`}
         id={this.props.id}
         style={{
           top:this.props.top,
@@ -100,7 +101,7 @@ Layer.propTypes = {
   hover: React.PropTypes.func,
   layer: React.PropTypes.object,
   net: React.PropTypes.object,
-  performSharedUpdate: React.PropTypes.func,
+  addSharedComment: React.PropTypes.func,
   isShared: React.PropTypes.bool,
   changeCommentOnLayer: React.PropTypes.func
 };

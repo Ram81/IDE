@@ -759,6 +759,14 @@ button.url-import-modal-button {
   -moz-box-shadow: 0px 0px 30px #aaa;
 }
 
+.highlighted {
+  border: 2px solid black;
+  box-shadow: 0px 0px 30px #aaa;
+  -o-box-shadow: 0px 0px 30px #aaa;
+  -webkit-box-shadow: 0px 0px 30px #aaa;
+  -moz-box-shadow: 0px 0px 30px #aaa;
+}
+
 .jsplumb-connector {
   z-index: 21;
 }

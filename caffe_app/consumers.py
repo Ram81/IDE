@@ -41,29 +41,100 @@ def ws_receive(message):
     print('message received...')
     # param initialization
     data = yaml.safe_load(message['text'])
-    networkId = message.channel_session['networkId']
-    net = data['net']
     action = data['action']
-    nextLayerId = data['nextLayerId']
-    tag = data['message']
+    randomId = data['randomId']
+    networkId = message.channel_session['networkId']
 
-    # save changes to database to maintain consistency
-    # get the net object on which update is made
-    netObj = Network.objects.get(id=int(networkId))
-    # network object is stored as string in db, when loading it is parsed
-    # create a new version of network in order to allow history support
-    network_version = create_network_version(json.dumps(net), netObj, tag)
+    if (action == 'UpdateHighlight'):
+        add_highlight_to = data['addHighlightTo']
+        remove_highlight_from = data['removeHighlightFrom']
+        user_id = data['userId']
 
-    # modify last updated time
-    netObj.updated_on = datetime.now()
-    netObj.save()
-    # sending update made by one user over all the sessions of open network
-    # Note - conflict resolution still pending
-    Group('model-{0}'.format(networkId)).send({
-        'text': json.dumps({
-            'net': net,
-            'nextLayerId': nextLayerId,
-            'action': action,
-            'version_id': network_version.id
+        Group('model-{0}'.format(networkId)).send({
+            'text': json.dumps({
+                'addHighlightTo': add_highlight_to,
+                'removeHighlightFrom': remove_highlight_from,
+                'userId': user_id,
+                'action': action,
+                'randomId': randomId
+            })
         })
-    })
+    elif (action == 'UpdateParam'):
+        layerId = data['layerId']
+        param = data['param']
+        value = data['value']
+        isProp = data['isProp']
+        tag = data['message']
+
+        # save changes to database to maintain consistency
+        # get the net object on which update is made
+        #netObj = Network.objects.get(id=int(networkId))
+        # network object is stored as string in db, when loading it is parsed
+        # create a new version of network in order to allow history support
+        #network_version = create_network_version(json.dumps(net), netObj, tag)
+
+        # modify last updated time
+        #netObj.updated_on = datetime.now()
+        #netObj.save()
+        # sending update made by one user over all the sessions of open network
+        # Note - conflict resolution still pending
+        Group('model-{0}'.format(networkId)).send({
+            'text': json.dumps({
+                'layerId': layerId,
+                'param': param,
+                'value': value,
+                'isProp': isProp,
+                'action': action,
+                'version_id': 0,
+                'randomId': randomId
+            })
+        })
+    elif (data['action'] == 'DeleteLayer'):
+        layerId = data['layerId']
+        tag = data['message']
+
+        # Note - conflict resolution still pending
+        Group('model-{0}'.format(networkId)).send({
+            'text': json.dumps({
+                'layerId': layerId,
+                'action': action,
+                'version_id': 0,
+                'randomId': randomId
+            })
+        })
+    elif (action == 'AddLayer'):
+        prevLayerId = data['prevLayerId']
+        layer = data['layer']
+        tag = data['message']
+
+        # save changes to database to maintain consistency
+        # get the net object on which update is made
+        #netObj = Network.objects.get(id=int(networkId))
+        # network object is stored as string in db, when loading it is parsed
+        # create a new version of network in order to allow history support
+        #network_version = create_network_version(json.dumps(net), netObj, tag)
+
+        # modify last updated time
+        #netObj.updated_on = datetime.now()
+        #netObj.save()
+        # sending update made by one user over all the sessions of open network
+        # Note - conflict resolution still pending
+        Group('model-{0}'.format(networkId)).send({
+            'text': json.dumps({
+                'layer': layer,
+                'prevLayerId': prevLayerId,
+                'action': action,
+                'version_id': 0,
+                'randomId': randomId
+            })
+        })
+    elif (action == 'AddComment'):
+        Group('model-{0}'.format(networkId)).send({
+            'text': json.dumps({
+                'layerId': data['layerId'],
+                'comment': data['comment'],
+                'action': action,
+                'version_id': 0,
+                'randomId': randomId
+            })
+        })
