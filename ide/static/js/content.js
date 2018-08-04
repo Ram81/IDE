@@ -213,25 +213,29 @@ class Content extends React.Component {
       isProp: isProp,
       action: 'UpdateParam',
       message: msg,
+      nextLayerId: this.state.nextLayerId,
       randomId: this.state.randomId
     });
   }
-  performSharedAdd(layer, prevLayerId) {
+  performSharedAdd(layer, prevLayerId, nextLayerId, layerId) {
     let  msg = 'New layer added';
 
     this.sendSocketMessage({
       layer: layer,
       prevLayerId: prevLayerId,
+      layerId: layerId,
       action: 'AddLayer',
       message: msg,
+      nextLayerId: nextLayerId,
       randomId: this.state.randomId
     })
   }
-  performSharedDelete(net, layerId) {
+  performSharedDelete(net, layerId, nextLayerId) {
     let  msg = 'Delete existing layer';
 
     this.sendSocketMessage({
       layerId: layerId,
+      nextLayerId: nextLayerId,
       action: 'DeleteLayer',
       message: msg,
       randomId: this.state.randomId
@@ -269,12 +273,13 @@ class Content extends React.Component {
   addNewLayer(layer, prevLayerId, publishUpdate=true) {
     const net = this.state.net;
     const layerId = `l${this.state.nextLayerId}`;
+    const nextLayerId = this.state.nextLayerId;
     var totalParameters = this.state.totalParameters;
     // shared addition of layer connections
     if (publishUpdate == false) {
       if (Array.isArray(prevLayerId)) {
         for (var i=0;i<prevLayerId.length;i++) {
-          net[prevLayerId]['connection']['output'].push(prevLayerId[i]);
+          net[prevLayerId[i]]['connection']['output'].push(layerId);
         }
       }
       else
@@ -303,7 +308,7 @@ class Content extends React.Component {
     this.setState({ net, nextLayerId: this.state.nextLayerId + 1, totalParameters: totalParameters });
     // if model is in RTC mode send updates to respective sockets
     if (this.state.isShared && publishUpdate) {
-      this.performSharedAdd(net[layerId], prevLayerId);
+      this.performSharedAdd(net[layerId], prevLayerId, nextLayerId + 1, layerId);
     }
   }
   changeCommentOnLayer(layerId) {
@@ -419,7 +424,7 @@ class Content extends React.Component {
     const output = net[layerId].connection.output;
     const layerIdNum = parseInt(layerId.substring(1,layerId.length)); //numeric value of the layerId
     const nextLayerId = this.state.nextLayerId - 1 == layerIdNum ? layerIdNum : this.state.nextLayerId;
-       //if last layer was deleted nextLayerId is replaced by deleted layer's id
+    //if last layer was deleted nextLayerId is replaced by deleted layer's id
     var totalParameters = this.state.totalParameters;
     let index;
     totalParameters -= this.getLayerParameters(net[layerId], net);
@@ -436,7 +441,7 @@ class Content extends React.Component {
     // if model is in RTC mode send updates to respective sockets
     // to avoid infinite loop of deletion over multiple session
     if (this.state.isShared && publishUpdate == true) {
-      this.performSharedDelete(net, layerId);
+      this.performSharedDelete(net, layerId, nextLayerId);
     }
   }
 
@@ -955,7 +960,8 @@ class Content extends React.Component {
       data: {
         net: JSON.stringify(netData),
         net_name: this.state.net_name,
-        user_id: this.getUserId()
+        user_id: this.getUserId(),
+        nextLayerId: this.state.nextLayerId
       },
       success : function (response) {
         if (response.result == 'success') {
@@ -1010,6 +1016,7 @@ class Content extends React.Component {
     // Note: this needs to be improved when handling conflict resolution to avoid
     // inconsistent states of model
     let socket = null;
+    let nextLayerId = this.state.nextLayerId;
     if (version_id == null) {
       socket = this.createSocket('ws://' + window.location.host + '/ws/connect/?id=' + id);
     }
@@ -1032,6 +1039,7 @@ class Content extends React.Component {
           // while loading a model ensure paramete intialisation
           // for UI show/hide is not executed, it leads to inconsistent
           // data which cannot be used further
+          nextLayerId = response.next_layer_id;
           this.initialiseImportedNet(response.net,response.net_name);
           if (Object.keys(response.net).length){
             this.calculateParameters(response.net);
@@ -1042,7 +1050,8 @@ class Content extends React.Component {
         }
         this.setState({
           load: false,
-          isShared: true
+          isShared: true,
+          nextLayerId: parseInt(nextLayerId)
         });
       }.bind(this),
       error() {

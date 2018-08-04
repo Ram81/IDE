@@ -1,9 +1,10 @@
 import copy
 import sys
 import yaml
+import json
 
 from yaml import safe_load
-from caffe_app.models import Network, NetworkVersion
+from caffe_app.models import Network, NetworkVersion, NetworkUpdates
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -89,6 +90,7 @@ def save_to_db(request):
         net = request.POST.get('net')
         net_name = request.POST.get('net_name')
         user_id = request.POST.get('user_id')
+        next_layer_id = request.POST.get('nextLayerId')
         public_sharing = True
         user = None
         if net_name == '':
@@ -105,12 +107,68 @@ def save_to_db(request):
             model.save()
             # create first version of model
             model_version = NetworkVersion(network=model, network_def=net)
-            model_version.tag = 'Model created'
             model_version.save()
+            # create initial update for nextLayerId
+            model_update = NetworkUpdates(network_version=model_version,
+                                          updated_data=json.dumps({ 'nextLayerId': next_layer_id }),
+                                          tag='ModelShared')
+            model_update.save()
 
             return JsonResponse({'result': 'success', 'id': model.id})
         except:
             return JsonResponse({'result': 'error', 'error': str(sys.exc_info()[1])})
+
+
+def get_network_version(netObj):
+    network_version = NetworkVersion.objects.filter(network=netObj).order_by('-created_on')[0]
+    updates_batch = NetworkUpdates.objects.filter(network_version=network_version).order_by('created_on')
+
+    network_def = yaml.safe_load(network_version.network_def)
+    next_layer_id = 0
+
+    for network_update in updates_batch:
+        updated_data = json.loads(network_update.updated_data)
+        tag = network_update.tag
+
+        if 'nextLayerId' in updated_data:
+            next_layer_id = updated_data['nextLayerId']
+
+        if tag == 'UpdateParam':
+            # Update Param UI event handling
+            if updated_data['isProp']:
+                network_def[updated_data['layerId']]['props'][updated_data['param']] = updated_data['value']
+            else:
+                network_def[updated_data['layerId']]['params'][updated_data['param']][0] = updated_data['value']
+
+        elif tag == 'DeleteLayer':
+            # Delete layer UI event handling
+            layer_id = updated_data['layerId']
+            input_layer_ids = network_def[layer_id]['connection']['input']
+            output_layer_ids = network_def[layer_id]['connection']['output']
+
+            for input_layer_id in input_layer_ids:
+                network_def[input_layer_id]['connection']['output'].remove(layer_id)
+
+            for output_layer_id in output_layer_ids:
+                network_def[output_layer_id]['connection']['input'].remove(layer_id)
+
+            del network_def[layer_id]
+
+        elif tag == 'AddLayer':
+            # Add layer UI event handling
+            prev_layer_id = updated_data['prevLayerId']
+            new_layer_id = updated_data['layerId']
+            if isinstance(prev_layer_id, list):
+                for layer_id in prev_layer_id:
+                    network_def[layer_id]['connection']['output'].append(new_layer_id)
+            else:
+                network_def[prev_layer_id]['connection']['output'].append(new_layer_id)
+            network_def[new_layer_id] = updated_data['layer']
+
+    return {
+        'network': network_def,
+        'next_layer_id': next_layer_id
+    }
 
 
 @csrf_exempt
@@ -132,8 +190,10 @@ def load_from_db(request):
                     version_id = version_id_dict[0]['version_id']
 
                 # fetch the required version of model
-                model_version = NetworkVersion.objects.get(id=version_id)
-                net = safe_load(model_version.network_def)
+                data = get_network_version(model)
+                net = data['network']
+                next_layer_id = data['next_layer_id']
+                #net = safe_load(model_version.network_def)
 
                 # authorizing the user for access to model
                 if not model.public_sharing:
@@ -142,7 +202,8 @@ def load_from_db(request):
             except Exception:
                 return JsonResponse({'result': 'error',
                                      'error': 'No network file found'})
-            return JsonResponse({'result': 'success', 'net': net, 'net_name': model.name})
+            return JsonResponse({'result': 'success', 'net': net, 'net_name': model.name,
+                                 'next_layer_id': next_layer_id})
 
     if request.method == 'GET':
         return index(request)
