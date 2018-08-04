@@ -165,6 +165,14 @@ def get_network_version(netObj):
                 network_def[prev_layer_id]['connection']['output'].append(new_layer_id)
             network_def[new_layer_id] = updated_data['layer']
 
+        elif tag == 'AddComment':
+            layer_id = updated_data['layerId']
+            comment = updated_data['comment']
+
+            if ('comments' not in network_def[layer_id]):
+                network_def[layer_id]['comments'] = [];
+            network_def[layer_id]['comments'].append(comment)
+
     return {
         'network': network_def,
         'next_layer_id': next_layer_id
