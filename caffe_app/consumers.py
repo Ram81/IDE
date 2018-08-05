@@ -4,7 +4,6 @@ import urlparse
 from channels import Group
 from channels.auth import channel_session_user, channel_session_user_from_http
 from caffe_app.models import Network, NetworkVersion, NetworkUpdates
-from datetime import datetime
 from ide.views import get_network_version
 
 
@@ -29,14 +28,15 @@ def fetch_network_version(netObj):
 
     # Batching updates
     # Note - size of batch is 20 for now, optimization can be done
-    if len(updates_batch) == 20:
+    if len(updates_batch) == 2:
         data = get_network_version(netObj)
         network_version = NetworkVersion(network=netObj, network_def=json.dumps(data['network']))
         network_version.save()
 
         network_update = NetworkUpdates(network_version=network_version,
-                                        updated_data=json.dumps({ 'nextLayerId': data['next_layer_id'] }),
+                                        updated_data=json.dumps({'nextLayerId': data['next_layer_id']}),
                                         tag='CheckpointCreated')
+        network_update.save()
     return network_version
 
 

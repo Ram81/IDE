@@ -3,14 +3,12 @@ import sys
 import yaml
 import json
 
-from yaml import safe_load
 from caffe_app.models import Network, NetworkVersion, NetworkUpdates
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from utils.shapes import get_shapes, get_layer_shape, handle_concat_layer
-from django.db.models import Max
 
 
 def index(request):
@@ -110,7 +108,7 @@ def save_to_db(request):
             model_version.save()
             # create initial update for nextLayerId
             model_update = NetworkUpdates(network_version=model_version,
-                                          updated_data=json.dumps({ 'nextLayerId': next_layer_id }),
+                                          updated_data=json.dumps({'nextLayerId': next_layer_id}),
                                           tag='ModelShared')
             model_update.save()
 
@@ -119,11 +117,8 @@ def save_to_db(request):
             return JsonResponse({'result': 'error', 'error': str(sys.exc_info()[1])})
 
 
-def get_network_version(netObj):
-    network_version = NetworkVersion.objects.filter(network=netObj).order_by('-created_on')[0]
-    updates_batch = NetworkUpdates.objects.filter(network_version=network_version).order_by('created_on')
-
-    network_def = yaml.safe_load(network_version.network_def)
+def create_network_version(network_def, updates_batch):
+    network_def = yaml.safe_load(network_def)
     next_layer_id = 0
 
     for network_update in updates_batch:
@@ -135,10 +130,14 @@ def get_network_version(netObj):
 
         if tag == 'UpdateParam':
             # Update Param UI event handling
+            param = updated_data['param']
+            layer_id = updated_data['layerId']
+            value = updated_data['value']
+
             if updated_data['isProp']:
-                network_def[updated_data['layerId']]['props'][updated_data['param']] = updated_data['value']
+                network_def[layer_id]['props'][param] = value
             else:
-                network_def[updated_data['layerId']]['params'][updated_data['param']][0] = updated_data['value']
+                network_def[layer_id]['params'][param][0] = value
 
         elif tag == 'DeleteLayer':
             # Delete layer UI event handling
@@ -158,6 +157,7 @@ def get_network_version(netObj):
             # Add layer UI event handling
             prev_layer_id = updated_data['prevLayerId']
             new_layer_id = updated_data['layerId']
+
             if isinstance(prev_layer_id, list):
                 for layer_id in prev_layer_id:
                     network_def[layer_id]['connection']['output'].append(new_layer_id)
@@ -170,13 +170,30 @@ def get_network_version(netObj):
             comment = updated_data['comment']
 
             if ('comments' not in network_def[layer_id]):
-                network_def[layer_id]['comments'] = [];
+                network_def[layer_id]['comments'] = []
             network_def[layer_id]['comments'].append(comment)
 
     return {
         'network': network_def,
         'next_layer_id': next_layer_id
     }
+
+
+def get_network_version(netObj):
+    network_version = NetworkVersion.objects.filter(network=netObj).order_by('-created_on')[0]
+    updates_batch = NetworkUpdates.objects.filter(network_version=network_version).order_by('created_on')
+
+    return create_network_version(network_version.network_def, updates_batch)
+
+
+def get_checkpoint_version(netObj, checkpoint_id):
+    network_update = NetworkUpdates.objects.get(id=checkpoint_id)
+    network_version = network_update.network_version
+
+    updates_batch = NetworkUpdates.objects.filter(network_version=network_version)\
+                                          .filter(created_on__lte=network_update.created_on)\
+                                          .order_by('created_on')
+    return create_network_version(network_version.network_def, updates_batch)
 
 
 @csrf_exempt
@@ -186,22 +203,18 @@ def load_from_db(request):
             try:
                 model = Network.objects.get(id=int(request.POST['proto_id']))
                 version_id = None
+                data = {}
 
                 if 'version_id' in request.POST and request.POST['version_id'] != '':
                     # added for loading any previous version of model
                     version_id = int(request.POST['version_id'])
+                    data = get_checkpoint_version(model, version_id)
                 else:
-                    # find the latest version of model where network id is proto_id
-                    version_id_dict = NetworkVersion.objects.filter(network=model) \
-                                        .values('network').annotate(version_id=Max('id')) \
-                                        .order_by()
-                    version_id = version_id_dict[0]['version_id']
+                    # fetch the required version of model
+                    data = get_network_version(model)
 
-                # fetch the required version of model
-                data = get_network_version(model)
                 net = data['network']
                 next_layer_id = data['next_layer_id']
-                #net = safe_load(model_version.network_def)
 
                 # authorizing the user for access to model
                 if not model.public_sharing:
@@ -223,11 +236,14 @@ def fetch_model_history(request):
         try:
             network_id = int(request.POST['net_id'])
             network = Network.objects.get(id=network_id)
-            network_versions = NetworkVersion.objects.filter(network=network)
+            network_versions = NetworkVersion.objects.filter(network=network).order_by('created_on')
 
             modelHistory = {}
             for version in network_versions:
-                modelHistory[version.id] = version.tag
+                network_updates = NetworkUpdates.objects.filter(network_version=version)\
+                                                        .order_by('created_on')
+                for update in network_updates:
+                    modelHistory[update.id] = update.tag
 
             return JsonResponse({
                 'result': 'success',
