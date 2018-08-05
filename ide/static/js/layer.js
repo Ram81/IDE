@@ -43,7 +43,25 @@ class Layer extends React.Component {
     let comments = [];
     let addCommentModal = null;
     let commentButton = null;
-    let highlightClass = this.props.layer.highlight ? 'highlighted' : '';
+    let highlightUser = null;
+    let highlightClass = '';
+    let highlightColor = '#000';
+
+    if(this.props.layer.highlight && this.props.layer.highlight.length > 0) {
+      highlightClass = 'highlighted';
+      highlightColor = this.props.layer.highlightColor[this.props.layer.highlightColor.length - 1];
+      highlightUser = (<div style={{
+                              background: highlightColor,
+                              color: 'white',
+                              position: 'absolute',
+                              top: '0px',
+                              left: '0px',
+                              fontSize: '11px',
+                              padding: '0px 5px 0px 0px'
+                            }}>
+                            {this.props.layer.highlight[this.props.layer.highlight.length - 1]}
+                        </div>);
+    }
     if ('comments' in this.props.layer && this.props.layer['comments'].length > 0) {
       comments = (<CommentTooltip
                           comments={this.props.layer['comments']}
@@ -74,7 +92,8 @@ class Layer extends React.Component {
         style={{
           top:this.props.top,
           left:this.props.left,
-          background: data[this.props.type].color
+          background: data[this.props.type].color,
+          borderColor: highlightColor
         }}
         data-type={this.props.type}
         onClick={(event) => this.props.click(event, this.props.id)}
@@ -82,10 +101,11 @@ class Layer extends React.Component {
         data-tip='tooltip'
         data-for='getContent'
       >
-          {commentButton}
-          {comments}
-          {addCommentModal}
+        {commentButton}
+        {comments}
+        {addCommentModal}
         {data[this.props.type].name}
+        {highlightUser}
       </div>
     );
   }

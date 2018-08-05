@@ -55,7 +55,8 @@ class Content extends React.Component {
       modelFramework: 'caffe',
       isShared: false,
       socket: null,
-      randomUserId: null
+      randomUserId: null,
+      highlightColor: '#000000'
     };
     this.addNewLayer = this.addNewLayer.bind(this);
     this.changeSelectedLayer = this.changeSelectedLayer.bind(this);
@@ -106,6 +107,7 @@ class Content extends React.Component {
     this.waitForConnection = this.waitForConnection.bind(this);
     this.setUserId = this.setUserId.bind(this);
     this.getUserId = this.getUserId.bind(this);
+    this.getUserName = this.getUserName.bind(this);
     this.modalContent = null;
     this.modalHeader = null;
     // Might need to improve the logic of clickEvent
@@ -117,6 +119,11 @@ class Content extends React.Component {
     this.addHighlightOnLayer = this.addHighlightOnLayer.bind(this);
     this.addSharedComment = this.addSharedComment.bind(this);
     this.changeCommentOnLayer = this.changeCommentOnLayer.bind(this);
+    this.getRandomColor = this.getRandomColor.bind(this);
+  }
+  getRandomColor() {
+    var rint = Math.round(0xffffff * Math.random());
+    return ('#0' + rint.toString(16)).replace(/^#0([0-9a-f]{6})$/i, '#$1');
   }
   createSocket(url) {
     return new WebSocket(url);
@@ -139,11 +146,24 @@ class Content extends React.Component {
     //let nextLayerId = this.state.nextLayerId;
     const net = this.state.net;
 
-    if(data['action'] == 'UpdateHighlight') {
-      if (data['addHighlightTo'] != null)
-        net[data['addHighlightTo']]['highlight'] = true;
-      if (data['removeHighlightFrom'] != null)
-        net[data['removeHighlightFrom']]['highlight'] = false;
+    if(data['action'] == 'UpdateHighlight' && data['randomId'] != this.state.randomId) {
+      let addHighlightToId = data['addHighlightTo'];
+      let removeHighlightFromId = data['removeHighlightFrom'];
+      let username = data['username'];
+
+      if (addHighlightToId != null) {
+        if (('highlight' in net[addHighlightToId]) == false) {
+            net[addHighlightToId]['highlight'] = [];
+            net[addHighlightToId]['highlightColor'] = [];
+        }
+        net[addHighlightToId]['highlight'].push(username);
+        net[addHighlightToId]['highlightColor'].push(data['highlightColor'])
+      }
+      if (removeHighlightFromId != null) {
+        let index = net[removeHighlightFromId]['highlight'].indexOf(removeHighlightFromId);
+        net[removeHighlightFromId]['highlight'].splice(index, 1);
+        net[removeHighlightFromId]['highlightColor'].splice(index, 1);
+      }
 
       this.setState({
         net: net
@@ -247,7 +267,9 @@ class Content extends React.Component {
       removeHighlightFrom: previousLayerId,
       userId: this.getUserId(),
       action: 'UpdateHighlight',
-      randomId: this.state.randomId
+      randomId: this.state.randomId,
+      highlightColor: this.state.highlightColor,
+      username: this.getUserName()
     })
   }
   addSharedComment(layerId, comment) {
@@ -269,6 +291,9 @@ class Content extends React.Component {
   }
   getUserId() {
     return UserProfile.getUserId();
+  }
+  getUserName() {
+    return UserProfile.getUsername();
   }
   addNewLayer(layer, prevLayerId, publishUpdate=true) {
     const net = this.state.net;
@@ -326,7 +351,9 @@ class Content extends React.Component {
       // css when layer is selected
       net[layerId].info.class = 'selected';
     }
-    this.addHighlightOnLayer(layerId, this.state.selectedLayer);
+    if (this.state.isShared) {
+      this.addHighlightOnLayer(layerId, this.state.selectedLayer);
+    }
     this.setState({ net, selectedLayer: layerId });
   }
   changeHoveredLayer(layerId) {
@@ -997,7 +1024,8 @@ class Content extends React.Component {
         this.setState({
           isShared: true,
           networkId: parseInt(urlParams['id']),
-          randomId: randomId
+          randomId: randomId,
+          highlightColor: this.getRandomColor()
         });
       }
       else {
@@ -1006,7 +1034,8 @@ class Content extends React.Component {
         this.setState({
           isShared: true,
           networkId: parseInt(urlParams['id']),
-          randomId: randomId
+          randomId: randomId,
+          highlightColor: this.getRandomColor()
         });
       }
     }

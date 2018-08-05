@@ -74,6 +74,9 @@ def ws_receive(message):
         add_highlight_to = data['addHighlightTo']
         remove_highlight_from = data['removeHighlightFrom']
         user_id = data['userId']
+        highlight_color = data['highlightColor']
+        username = data['username']
+        print(data['username'])
 
         Group('model-{0}'.format(networkId)).send({
             'text': json.dumps({
@@ -81,7 +84,9 @@ def ws_receive(message):
                 'removeHighlightFrom': remove_highlight_from,
                 'userId': user_id,
                 'action': action,
-                'randomId': randomId
+                'randomId': randomId,
+                'highlightColor': highlight_color,
+                'username': username
             })
         })
     else:
