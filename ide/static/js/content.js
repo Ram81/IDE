@@ -108,6 +108,7 @@ class Content extends React.Component {
     this.setUserId = this.setUserId.bind(this);
     this.getUserId = this.getUserId.bind(this);
     this.getUserName = this.getUserName.bind(this);
+    this.setUserName = this.setUserName.bind(this);
     this.modalContent = null;
     this.modalHeader = null;
     // Might need to improve the logic of clickEvent
@@ -291,6 +292,9 @@ class Content extends React.Component {
   }
   getUserId() {
     return UserProfile.getUserId();
+  }
+  setUserName(name) {
+    UserProfile.setUsername(name);
   }
   getUserName() {
     return UserProfile.getUsername();
@@ -1272,7 +1276,7 @@ class Content extends React.Component {
               updateHistoryModal={this.updateHistoryModal}
              />
              <h5 className="sidebar-heading">LOGIN</h5>
-             <Login setUserId={this.setUserId}></Login>
+             <Login setUserId={this.setUserId} setUserName={this.setUserName}></Login>
              <h5 className="sidebar-heading">INSERT LAYER</h5>
              <Pane
              handleClick = {this.handleClick}
