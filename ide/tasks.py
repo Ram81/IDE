@@ -137,6 +137,7 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
         del net[i]
 
     # Check if conversion is possible
+    # Note : Error handling can be improved further
     error = []
     custom_layers = []
     for key, value in custom_layers_map.iteritems():
@@ -150,6 +151,7 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
             pass
         else:
             error.append(layerId + '(' + layerType + ')')
+            break
     if len(error):
         Channel(reply_channel).send({
             'text': json.dumps({
@@ -158,6 +160,7 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
                 'error': 'Cannot convert ' + ', '.join(error) + ' to Keras'
             })
         })
+        return
 
     stack = []
     net_out = {}
@@ -195,6 +198,7 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
                 'error': 'Cannot convert ' + ', '.join(error) + ' to Keras'
             })
         })
+        return
 
     while(len(stack)):
         if ('Loss' in net[layerId]['info']['type'] or
@@ -240,8 +244,13 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
                 processedLayer[idNext] = True
                 processedLayer[layerId] = True
             else:
-                net_out.update(layer_map[net[layerId]['info']['type']](
-                    net[layerId], layer_in, layerId))
+                if (net[layerId]['info']['type'] in layer_map):
+                    net_out.update(layer_map[net[layerId]['info']['type']](
+                        net[layerId], layer_in, layerId))
+                else:
+                    error.append(
+                        layerId + '(' + net[layerId]['info']['type'] + ')')
+                    break
             for outputId in net[layerId]['connection']['output']:
                 if outputId not in stack:
                     stack.append(outputId)
@@ -249,7 +258,9 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
         else:
             error.append(
                 layerId + '(' + net[layerId]['info']['type'] + ')')
-    if len(error):
+            break
+
+    if len(error) > 0:
         Channel(reply_channel).send({
             'text': json.dumps({
                 'result': 'error',
@@ -257,6 +268,7 @@ def export_keras_json(net, net_name, is_tf, reply_channel):
                 'error': 'Cannot convert ' + ', '.join(error) + ' to Keras'
             })
         })
+        return
 
     final_input = []
     final_output = []

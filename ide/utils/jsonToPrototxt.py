@@ -1248,7 +1248,6 @@ def json_to_prototxt(net, net_name):
     # layers name have to be unique
 
     # custom DFS of the network
-    print('viold')
     input_dim = None
     stack = []
     layersProcessed = {}

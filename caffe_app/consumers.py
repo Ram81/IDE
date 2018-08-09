@@ -190,7 +190,3 @@ def ws_receive(message):
                     'randomId': randomId
                 })
             })
-
-
-def celery_response_handler(response):
-    print('ola')
