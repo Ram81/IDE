@@ -77,7 +77,7 @@ class Layer extends React.Component {
                                   doSharedUpdate={this.doSharedUpdate}/>);
     }
 
-    if (this.props.isShared && comments.length < 1) {
+    if (this.props.isShared && !this.state.isForked && comments.length < 1) {
       commentButton = (<a style={{color: 'white', position: 'absolute', top: '-5px', right: '-1px'}}
                           onClick={(event) => this.onAddComment(event)}>
                             <span className="glyphicon glyphicon-comment"
@@ -123,6 +123,7 @@ Layer.propTypes = {
   net: React.PropTypes.object,
   addSharedComment: React.PropTypes.func,
   isShared: React.PropTypes.bool,
+  isForked: React.PropTypes.bool,
   changeCommentOnLayer: React.PropTypes.func
 };
 
