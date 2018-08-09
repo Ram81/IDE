@@ -150,12 +150,10 @@ class Content extends React.Component {
     const net = this.state.net;
 
     if(data['action'] == 'ExportNet') {
-      console.log(data);
       if(data['result'] == 'success') {
         this.downloadModel(data);
       }
       else {
-
         this.addError(data['error']);
       }
     }
