@@ -10,9 +10,9 @@ class CommentSidebar extends React.Component {
     this.props.changeCommentOnLayer(null);
   }
   addComment() {
-    this.props.net[this.props.commentOnLayer]['comments'].push(this.refs.comment_1.value);
-    this.props.addSharedComment(this.props.commentOnLayer, this.refs.comment_1.value);
-    this.refs.comment_1.value = '';
+    this.props.net[this.props.commentOnLayer]['comments'].push(this.refs.comment_text.value);
+    this.props.addSharedComment(this.props.commentOnLayer, this.refs.comment_text.value);
+    this.refs.comment_text.value = '';
   }
   render() {
     let commentDiv = [];
@@ -49,7 +49,7 @@ class CommentSidebar extends React.Component {
             {commentDiv}
             <div className="row" style={{ paddingTop: '5px'}}>
               <div className="col-md-12" style={{ padding: '0px', paddingLeft: '24px', paddingRight: '0px', color: 'black'}}>
-                <textarea ref="comment_1" className="CommentModalTextarea" placeholder="Add your comment here..."  onClick={this.handleClick}>
+                <textarea ref="comment_text" className="CommentModalTextarea" placeholder="Add your comment here..."  onClick={this.handleClick}>
                 </textarea>
               </div>
             </div>
