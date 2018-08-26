@@ -1344,6 +1344,12 @@ class Content extends React.Component {
             changeCommentOnLayer={this.changeCommentOnLayer}
             addSharedComment={this.addSharedComment}
           />
+          <CommentSidebar
+            net={this.state.net}
+            commentOnLayer={this.state.commentOnLayer}
+            changeCommentOnLayer={this.changeCommentOnLayer}
+            performSharedUpdate={this.performSharedUpdate}
+          />
           <Tooltip
             id={'tooltip_text'}
             net={this.state.net}
