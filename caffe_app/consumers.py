@@ -76,7 +76,6 @@ def ws_receive(message):
         user_id = data['userId']
         highlight_color = data['highlightColor']
         username = data['username']
-        print(data['username'])
 
         Group('model-{0}'.format(networkId)).send({
             'text': json.dumps({
