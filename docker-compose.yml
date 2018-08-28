@@ -31,6 +31,26 @@ services:
     networks:
       - fabrik
 
+  celery:
+    restart: always
+    hostname: celery
+    env_file:
+      - docker/dev.env
+    links:
+      - redis
+    build:
+      context: ./
+      dockerfile: docker/dev/celery/Dockerfile
+    command: celery -A ide worker --app=ide.celery_app --loglevel=info
+    depends_on:
+      - db
+      - reactjs
+      - redis
+    volumes:
+      - .:/code
+    networks:
+      - fabrik
+
   django:
     restart: always
     container_name: django
@@ -39,6 +59,7 @@ services:
       - docker/dev.env
     links:
       - reactjs
+      - celery
     build:
       context: ./
       dockerfile: docker/dev/django/Dockerfile
@@ -49,6 +70,7 @@ services:
       - db
       - reactjs
       - redis
+      - celery
     volumes:
       - .:/code
     networks:
