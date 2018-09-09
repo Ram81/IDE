@@ -145,8 +145,6 @@ class Content extends React.Component {
   onSocketMessage(message) {
     // message received on socket
     let data = JSON.parse(message['data']);
-    //let rebuildNet = false;
-    //let nextLayerId = this.state.nextLayerId;
     const net = this.state.net;
 
     if(data['action'] == 'ExportNet') {
