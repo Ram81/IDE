@@ -59,6 +59,3 @@ services:
       - celery
     volumes:
       - .:/code
-
-networks:
-  fabrik:
