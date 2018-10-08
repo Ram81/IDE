@@ -1019,18 +1019,24 @@ class Content extends React.Component {
       urlParams[$1] = $3;
       }
     );
+<<<<<<< HEAD
 
     // setting up socket connection
     let socket = this.createSocket('ws://' + window.location.host + '/ws/connect/?id=' + urlParams['id']);
     this.setState({ socket: socket });
     this.waitForConnection (this.onSocketConnect, 1000);
 
+=======
+>>>>>>> 7b51c13a0df73788b3f41d9320cc52b6e0c37188
     if ('id' in urlParams){
       if ('version' in urlParams) {
         this.loadDb(urlParams['id'], urlParams['version']);
         this.setState({
           isShared: true,
+<<<<<<< HEAD
           isForked: true,
+=======
+>>>>>>> 7b51c13a0df73788b3f41d9320cc52b6e0c37188
           networkId: parseInt(urlParams['id']),
           randomId: randomId,
           highlightColor: this.getRandomColor()

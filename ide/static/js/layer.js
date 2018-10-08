@@ -50,15 +50,7 @@ class Layer extends React.Component {
     if(this.props.layer.highlight && this.props.layer.highlight.length > 0) {
       highlightClass = 'highlighted';
       highlightColor = this.props.layer.highlightColor[this.props.layer.highlightColor.length - 1];
-      highlightUser = (<div style={{
-                              background: highlightColor,
-                              color: 'white',
-                              position: 'absolute',
-                              top: '0px',
-                              left: '0px',
-                              fontSize: '11px',
-                              padding: '0px 5px 0px 0px'
-                            }}>
+      highlightUser = (<div className="highlight-style" style={{background: highlightColor}}>
                             {this.props.layer.highlight[this.props.layer.highlight.length - 1]}
                         </div>);
     }
