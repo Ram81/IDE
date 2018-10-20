@@ -50,3 +50,4 @@ ADD . /code
 RUN pip install -r requirements/dev.txt
 
 EXPOSE 8000
+EXPOSE 8001

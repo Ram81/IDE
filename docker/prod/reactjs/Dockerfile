@@ -26,6 +26,8 @@ RUN npm install --save-dev json-loader
 
 RUN npm install -g webpack@1.13.1
 
+RUN webpack
+
 FROM nginx:1.13-alpine
 COPY docker/prod/reactjs/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=react /code /code
