@@ -1021,8 +1021,6 @@ class Content extends React.Component {
     );
 
     // setting up socket connection
-    console.log('ws://' + window.location.host + '/ws/connect/?id=');
-    
     if ('id' in urlParams){
       let socket = this.createSocket('ws://' + window.location.host + '/ws/connect/?id=' + urlParams['id']);
       this.setState({ socket: socket });
